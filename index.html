@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>小一遊戲樂園</title>
+<style>
+  :root { --bg:#fff8e7; --card:#ffffff; --ink:#3b2f2f; --math:#ff8a5b; --zhuyin:#4fb3bf; --muted:#9a8f86; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink);
+         font-family:"BpmfZihiKaiStd","Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif; }
+  header { text-align:center; padding:32px 16px 8px; }
+  h1 { font-size:clamp(2rem,7vw,3.2rem); margin:0; }
+  header p { font-size:1.2rem; color:var(--muted); margin:8px 0 0; }
+  main { max-width:960px; margin:0 auto; padding:16px; display:grid; gap:24px;
+         grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+  section { background:var(--card); border-radius:24px; padding:24px;
+            box-shadow:0 6px 0 rgba(0,0,0,.08); border-top:10px solid var(--c); }
+  section.math { --c:var(--math); } section.zhuyin { --c:var(--zhuyin); }
+  h2 { font-size:2rem; margin:0 0 16px; }
+  ul { list-style:none; margin:0; padding:0; display:grid; gap:12px; }
+  a.game { display:block; padding:18px 20px; border-radius:16px; background:var(--c);
+           color:#fff; font-size:1.4rem; font-weight:bold; text-decoration:none; }
+  a.game:active { transform:scale(.97); }
+  .empty { color:var(--muted); font-size:1.2rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎈 小一遊戲樂園</h1>
+  <p>一起玩數學、學注音！</p>
+</header>
+<main>
+  <section class="math">
+    <h2>🔢 數學</h2>
+    <ul>
+      <!-- 新遊戲加在這裡：<li><a class="game" href="tools/math-xxx/">遊戲名</a></li> -->
+      <li><a class="game" href="tools/math-add-within-10/">🍎 10 以內加減</a></li>
+    </ul>
+  </section>
+  <section class="zhuyin">
+    <h2>ㄅㄆㄇ 注音</h2>
+    <ul>
+      <!-- 新遊戲加在這裡：<li><a class="game" href="tools/zhuyin-xxx/">遊戲名</a></li> -->
+      <li class="empty">遊戲準備中……</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>10 以內加減</title>
+<link rel="stylesheet" href="../../shared/battle.css">
+<script src="../../shared/sound.js"></script>
+<script src="../../shared/battle.js"></script>
+<style>
+  :root { --bg:#fff8e7; --card:#fff; --ink:#3b2f2f; --muted:#9a8f86;
+          --add:#ff8a5b; --sub:#6c9bd2; --mix:#9b7bd4; --ok:#5cb85c; --no:#d9d2c9; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--bg); color:var(--ink); user-select:none;
+         font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif; }
+  .screen { display:none; min-height:100%; flex-direction:column; align-items:center;
+            padding:16px; max-width:760px; margin:0 auto; }
+  .screen.on { display:flex; }
+  button { font-family:inherit; border:0; cursor:pointer; color:#fff; font-weight:bold; }
+  button:active { transform:scale(.96); }
+  .home { position:absolute; top:12px; left:12px; color:var(--muted); font-size:1.1rem; text-decoration:none; }
+
+  /* 開始畫面 */
+  h1 { font-size:clamp(2.2rem,8vw,3.4rem); margin:56px 0 8px; text-align:center; }
+  .sub { color:var(--muted); font-size:1.3rem; margin:0 0 24px; }
+  .group-title { font-size:1.6rem; font-weight:bold; margin:8px 0 12px; width:100%; max-width:520px; }
+  .modes { display:grid; gap:12px; width:100%; max-width:520px; grid-template-columns:repeat(3,1fr); margin-bottom:24px; }
+  .modes button { font-size:clamp(1.3rem,5vw,1.8rem); padding:20px 6px; border-radius:24px; box-shadow:0 6px 0 rgba(0,0,0,.15); }
+  .modes.fight button { padding:26px 6px; }
+
+  /* 打怪獸畫面裡的題目縮小一點 */
+  #battle { padding:0 16px; }
+  .bt-q .eq { font-size:clamp(2.4rem,11vw,3.8rem); }
+  .bt-q .pics { margin-top:8px; min-height:0; }
+  .bt-q .group { font-size:clamp(1.3rem,5vw,2rem); }
+  .m-add { background:var(--add); } .m-sub { background:var(--sub); } .m-mix { background:var(--mix); }
+
+  /* 遊戲畫面 */
+  .bar { width:100%; display:flex; align-items:center; gap:12px; margin-top:8px; }
+  .stars { flex:1; display:flex; gap:4px; font-size:1.6rem; justify-content:center; flex-wrap:wrap; }
+  .stars span { opacity:.25; } .stars span.got { opacity:1; }
+  .icon-btn { background:var(--card); color:var(--ink); font-size:1.6rem; width:56px; height:56px;
+              border-radius:50%; box-shadow:0 4px 0 rgba(0,0,0,.1); }
+  .card { background:var(--card); border-radius:28px; width:100%; margin-top:16px; padding:20px 16px;
+          box-shadow:0 6px 0 rgba(0,0,0,.08); text-align:center; }
+  .eq { font-size:clamp(3.2rem,16vw,5.5rem); font-weight:bold; letter-spacing:.05em; line-height:1.1; }
+  .eq .q { display:inline-block; min-width:1.1em; border-bottom:6px solid var(--muted); color:var(--muted); }
+  .eq .q.done { color:var(--ok); border-color:var(--ok); }
+  .pics { display:flex; justify-content:center; align-items:center; gap:14px; flex-wrap:wrap;
+          margin-top:16px; min-height:64px; }
+  .group { display:grid; grid-template-columns:repeat(5,auto); gap:4px; font-size:clamp(2rem,8vw,3.2rem); }
+  .group span.gone { position:relative; }
+  .group span.gone::after { content:"✕"; position:absolute; inset:0; color:#e05555; font-weight:bold;
+                            background:rgba(255,255,255,.6); display:flex; align-items:center; justify-content:center; }
+  .op { font-size:2.2rem; color:var(--muted); font-weight:bold; }
+  .msg { height:2.6rem; font-size:1.8rem; margin-top:14px; font-weight:bold; }
+  .choices { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; margin-top:8px; }
+  .choices button { font-size:clamp(2.6rem,12vw,3.6rem); padding:18px 0; border-radius:24px;
+                    background:var(--c,var(--add)); box-shadow:0 6px 0 rgba(0,0,0,.15); }
+  .choices button.wrong { background:var(--no); box-shadow:none; animation:shake .4s; }
+  .choices button.right { background:var(--ok); }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+  @keyframes pop { 0%{transform:scale(.6)} 60%{transform:scale(1.2)} 100%{transform:scale(1)} }
+  .pop { animation:pop .4s; }
+
+  /* 結束畫面 */
+  .result-stars { font-size:2.6rem; margin:24px 0; text-align:center; line-height:1.4; max-width:420px; }
+  .big { font-size:2rem; padding:20px 40px; border-radius:24px; background:var(--add);
+         box-shadow:0 6px 0 rgba(0,0,0,.15); margin-top:12px; min-width:260px; }
+  .big.alt { background:var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- 開始 -->
+<section class="screen on" id="start">
+  <a class="home" href="../../">← 回首頁</a>
+  <h1>🍎 10 以內加減</h1>
+  <p class="sub">選一個來玩吧！</p>
+  <div class="group-title">⚔️ 打怪獸</div>
+  <div class="modes fight">
+    <button class="m-add" data-battle="add">➕ 加法</button>
+    <button class="m-sub" data-battle="sub">➖ 減法</button>
+    <button class="m-mix" data-battle="mix">🔀 混合</button>
+  </div>
+  <div class="group-title">📝 練習（不計時）</div>
+  <div class="modes">
+    <button class="m-add" data-mode="add">➕ 加法</button>
+    <button class="m-sub" data-mode="sub">➖ 減法</button>
+    <button class="m-mix" data-mode="mix">🔀 混合</button>
+  </div>
+</section>
+
+<!-- 遊戲 -->
+<section class="screen" id="game">
+  <div class="bar">
+    <button class="icon-btn" id="quit" aria-label="離開">✕</button>
+    <div class="stars" id="stars"></div>
+    <button class="icon-btn" id="speak" aria-label="唸題目">🔊</button>
+  </div>
+  <div class="card">
+    <div class="eq" id="eq"></div>
+    <div class="pics" id="pics"></div>
+  </div>
+  <div class="msg" id="msg"></div>
+  <div class="choices" id="choices"></div>
+</section>
+
+<!-- 打怪獸（畫面由 shared/battle.js 產生）-->
+<section class="screen" id="battle"></section>
+
+<!-- 結束 -->
+<section class="screen" id="end">
+  <h1 id="endTitle">🎉 太棒了！</h1>
+  <div class="result-stars" id="resultStars"></div>
+  <p class="sub" id="endSub"></p>
+  <button class="big" id="again">再玩一次</button>
+  <button class="big alt" id="back">換一種玩法</button>
+</section>
+
+<script>
+// ===== 設定 =====
+const ROUNDS = 10;          // 一輪幾題
+const MAX = 10;             // 數字上限
+const ITEMS = ['🍎','🍓','🐟','🚗','⭐','🍪','🐥','🎈','🍩','🐞'];
+const CHEERS = ['答對了！','好厲害！','太棒了！','你好聰明！','完全正確！'];
+const TRY_AGAIN = ['再試試看～','差一點點！','想一想，數數看！'];
+
+// ===== 題目產生（與畫面分開，之後好調整難度）=====
+function makeQuestion(mode, last) {
+  let q;
+  do {
+    const op = mode === 'mix' ? (Math.random() < .5 ? '+' : '-') : (mode === 'add' ? '+' : '-');
+    if (op === '+') {
+      const a = rand(0, MAX), b = rand(0, MAX - a);
+      q = { a, b, op, ans: a + b };
+    } else {
+      const a = rand(1, MAX), b = rand(0, a);
+      q = { a, b, op, ans: a - b };
+    }
+  } while (last && q.a === last.a && q.b === last.b && q.op === last.op);
+  q.item = ITEMS[rand(0, ITEMS.length - 1)];
+  q.choices = makeChoices(q.ans);
+  return q;
+}
+function makeChoices(ans) {
+  // 正解 + 3 個接近的錯誤選項（0~10 之間）
+  const set = new Set([ans]);
+  const near = [ans - 1, ans + 1, ans - 2, ans + 2, ans - 3, ans + 3].filter(n => n >= 0 && n <= MAX);
+  shuffle(near);
+  for (const n of near) { if (set.size >= 4) break; set.add(n); }
+  while (set.size < 4) set.add(rand(0, MAX));
+  return shuffle([...set]);
+}
+function rand(lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); }
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = rand(0, i); [arr[i], arr[j]] = [arr[j], arr[i]]; } return arr; }
+
+// ===== 聲音（共用 shared/sound.js）=====
+const beep = Sound.beep, say = Sound.say;
+
+// ===== 遊戲狀態 =====
+const $ = id => document.getElementById(id);
+let mode, n, q, tries, results, locked, timer;
+const COLOR = { add:'var(--add)', sub:'var(--sub)', mix:'var(--mix)' };
+
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); }
+
+function startGame(m) {
+  clearTimeout(timer);
+  mode = m; n = 0; results = []; q = null;
+  $('choices').style.setProperty('--c', COLOR[mode]);
+  show('game'); next();
+}
+
+function next() {
+  if (n >= ROUNDS) return finish();
+  q = makeQuestion(mode, q); tries = 0; locked = false;
+  renderStars();
+  $('eq').innerHTML = eqHtml(q);
+  renderPics(q, $('pics'));
+  $('msg').textContent = '';
+  $('choices').innerHTML = '';
+  q.choices.forEach(c => {
+    const b = document.createElement('button');
+    b.textContent = c;
+    b.onclick = () => pick(b, c);
+    $('choices').appendChild(b);
+  });
+  speakQ();
+}
+
+function eqHtml(q) {
+  return `${q.a} ${q.op === '+' ? '+' : '−'} ${q.b} = <span class="q">?</span>`;
+}
+
+function renderPics(q, p) {
+  p.innerHTML = '';
+  const group = (count, goneFrom = Infinity) => {
+    const g = document.createElement('div'); g.className = 'group';
+    for (let i = 0; i < count; i++) {
+      const s = document.createElement('span'); s.textContent = q.item;
+      if (i >= goneFrom) s.className = 'gone';
+      g.appendChild(s);
+    }
+    return g;
+  };
+  if (q.op === '+') {
+    if (q.a) p.appendChild(group(q.a));
+    const plus = document.createElement('span'); plus.className = 'op'; plus.textContent = '+';
+    p.appendChild(plus);
+    if (q.b) p.appendChild(group(q.b));
+  } else {
+    // 減法：畫 a 個，最後 b 個打叉
+    if (q.a) p.appendChild(group(q.a, q.a - q.b));
+  }
+}
+
+function speechOf(q) { return `${q.a} ${q.op === '+' ? '加' : '減'} ${q.b}，等於多少？`; }
+function speakQ() { say(speechOf(q)); }
+
+// ===== 打怪獸模式 =====
+// 圖片放進 assets/ 對應的檔名就會自動換上，沒有圖時用 emoji 暫代
+function startBattle(m) {
+  show('battle');
+  Battle.start({
+    root: $('battle'),
+    nextQuestion: last => makeQuestion(m, last),
+    renderQuestion: (q, el) => {
+      el.innerHTML = `<div class="eq">${eqHtml(q)}</div><div class="pics"></div>`;
+      renderPics(q, el.querySelector('.pics'));
+    },
+    revealAnswer: (q, el) => {
+      const qs = el.querySelector('.q'); qs.textContent = q.ans; qs.classList.add('done');
+    },
+    speech: speechOf,
+    color: COLOR[m],
+    monster: { name: '恐龍', emoji: '🦖', img: {
+      idle: '../../assets/monsters/dino-green.png',
+      hurt: '../../assets/monsters/dino-green-hurt.png',
+      down: '../../assets/monsters/dino-green-down.png' } },
+    player: { name: '我', emoji: '🧒', img: {
+      idle: '../../assets/player/player.png',
+      attack: '../../assets/player/player-attack.png',
+      hurt: '../../assets/player/player-hurt.png' } },
+    background: '../../assets/backgrounds/forest.jpg',
+    onExit: () => show('start'),
+  });
+}
+
+function pick(btn, c) {
+  if (locked || btn.classList.contains('wrong')) return;
+  if (c === q.ans) {
+    locked = true;
+    btn.classList.add('right', 'pop');
+    const qs = $('eq').querySelector('.q'); qs.textContent = q.ans; qs.classList.add('done', 'pop');
+    const cheer = CHEERS[rand(0, CHEERS.length - 1)];
+    $('msg').style.color = 'var(--ok)'; $('msg').textContent = '🎉 ' + cheer;
+    beep([660, 880, 1100]);
+    say(`${q.a} ${q.op === '+' ? '加' : '減'} ${q.b} 等於 ${q.ans}，${cheer}`);
+    results.push(tries === 0 ? '🌟' : '⭐');  // 一次答對 🌟，試過才對 ⭐
+    n++;
+    renderStars();
+    timer = setTimeout(next, 2200);
+  } else {
+    tries++;
+    btn.classList.add('wrong');
+    $('msg').style.color = 'var(--muted)';
+    $('msg').textContent = TRY_AGAIN[rand(0, TRY_AGAIN.length - 1)] + ' 👀';
+    beep([330, 260], .1);
+    // 提示：讓圖片跳一下，引導孩子去數
+    $('pics').querySelectorAll('.group').forEach(g => { g.classList.remove('pop'); void g.offsetWidth; g.classList.add('pop'); });
+  }
+}
+
+function renderStars() {
+  $('stars').innerHTML = Array.from({ length: ROUNDS }, (_, i) =>
+    `<span class="${i < results.length ? 'got' : ''}">${results[i] || '⭐'}</span>`).join('');
+}
+
+function finish() {
+  const first = results.filter(r => r === '🌟').length;
+  $('resultStars').textContent = results.join(' ');
+  $('endTitle').textContent = first >= 8 ? '🏆 超級厲害！' : first >= 5 ? '🎉 太棒了！' : '💪 你好努力！';
+  $('endSub').textContent = `${ROUNDS} 題全部完成！一次就答對 ${first} 題`;
+  show('end');
+  beep([523, 659, 784, 1047], .15);
+  say($('endTitle').textContent.replace(/^\S+\s/, '') + `一次就答對 ${first} 題`);
+}
+
+// ===== 綁定按鈕 =====
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => startGame(b.dataset.mode));
+document.querySelectorAll('[data-battle]').forEach(b => b.onclick = () => startBattle(b.dataset.battle));
+$('speak').onclick = speakQ;
+$('quit').onclick = () => { clearTimeout(timer); Sound.hush(); show('start'); };
+$('again').onclick = () => startGame(mode);
+$('back').onclick = () => show('start');
+</script>
+</body>
+</html>

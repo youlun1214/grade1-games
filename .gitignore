@@ -14,3 +14,6 @@ credentials.*
 # Node.js
 node_modules/
 package-lock.json
+
+# 兒子的真實照片（只留在雲端硬碟，絕不公開）
+assets/_private/
