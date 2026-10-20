@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>注音打怪獸</title>
+<link rel="stylesheet" href="../../shared/battle.css">
+<link rel="stylesheet" href="../../shared/levels.css">
+<script src="../../shared/sound.js"></script>
+<script src="../../shared/battle.js"></script>
+<script src="../../shared/levels.js"></script>
+<script src="bank.js"></script>
+<style>
+  :root { --bg:#fff8e7; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { margin:0; background:var(--bg); color:#2a2a2a; user-select:none;
+         font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif; }
+  .screen { display:none; min-height:100%; max-width:760px; margin:0 auto; padding:0 16px; }
+  .screen.on { display:block; }
+  button { font-family:inherit; cursor:pointer; }
+
+  /* 題目框裡的樣式 */
+  .zq-prompt { font-size:clamp(1.15rem,4.6vw,1.5rem); font-weight:bold; }
+  .zq-pic { font-size:clamp(2.8rem,12vw,3.8rem); line-height:1.15; margin-top:2px; }
+  .zq-word { font-size:1.1rem; color:#9a8f86; }
+  .zq-zy { font-size:clamp(2.4rem,11vw,3.4rem); font-weight:bold; letter-spacing:.08em; line-height:1.2; margin-top:4px; }
+  .zq-blank { display:inline-block; min-width:1em; color:#e05555; border-bottom:4px solid #e05555; }
+  .zq-emoji { font-size:clamp(2.4rem,11vw,3.2rem); line-height:1; }
+  .zq-tone { display:inline-block; min-width:1em; margin-right:6px; color:#d06020; }
+  .bt-choices button:has(.zq-tone) { font-size:clamp(1.5rem,6.5vw,2rem); }
+  .zq-pick { display:flex; flex-direction:column; align-items:center; line-height:1; }
+  .zq-pick small { font-size:1.1rem; color:#6b5f57; margin-top:4px; }
+  .bt-choices button.right .zq-pick small { color:#fff; }
+</style>
+</head>
+<body>
+
+<!-- 開始：輸入名字 -->
+<section class="screen on" id="start"></section>
+
+<!-- 關卡地圖 -->
+<section class="screen" id="map"></section>
+
+<!-- 排行榜 -->
+<section class="screen" id="board"></section>
+
+<!-- 對戰（畫面由 shared/battle.js 產生）-->
+<section class="screen" id="battle"></section>
+
+<script>
+const BASE = '../../';            // 回到專案根目錄
+const GAME_ID = 'zhuyin-battle';  // 存紀錄用
+const TITLE = 'ㄅ 注音打怪獸';
+const LEVELS = ZhuyinBank.levels();
+const $ = id => document.getElementById(id);
+let playerName = '';
+let backTo = 'start';             // 排行榜按「返回」要回到哪裡
+
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); window.scrollTo(0, 0); }
+
+function showStart() {
+  show('start');
+  Levels.renderStart($('start'), {
+    gameId: GAME_ID, title: TITLE, homeHref: BASE,
+    subtitle: '康軒首冊 9 課＋魔王關，一關一隻怪獸！',
+    onStart: name => { playerName = name; showMap(); },
+    onBoard: () => showBoard('start'),
+  });
+}
+
+function showMap() {
+  show('map');
+  Levels.renderMap($('map'), {
+    gameId: GAME_ID, name: playerName, base: BASE, levels: LEVELS, title: TITLE,
+    onPick: startLevel,
+    onSwitch: showStart,
+    onBoard: () => showBoard('map'),
+  });
+}
+
+function showBoard(from) {
+  backTo = from;
+  show('board');
+  Levels.renderBoard($('board'), {
+    gameId: GAME_ID, title: TITLE, name: playerName,
+    onBack: () => backTo === 'map' ? showMap() : showStart(),
+  });
+}
+
+function startLevel(i) {
+  show('battle');
+  Battle.start({
+    root: $('battle'),
+    level: { no: i + 1, title: LEVELS[i].title, monster: Levels.monster(i, BASE), rules: Levels.TIMING[i] },
+    player: Levels.player(BASE, ['注音拳', '拼音飛踢', '聲調光波'], playerName),
+    nextQuestion: last => ZhuyinBank.question(i + 1, last),
+    renderQuestion: (q, el) => { el.innerHTML = q.html; },
+    speech: q => q.speech,
+    answerText: q => q.answerText,
+    background: BASE + 'assets/backgrounds/battle.jpg',
+    hasNext: i < LEVELS.length - 1,
+    isLast: i === LEVELS.length - 1,
+    // 每場打完都記錄，結算畫面附上排行榜
+    onEnd: r => Levels.recordResult(GAME_ID, playerName, i + 1, r, LEVELS.length),
+    overExtra: () => `<div class="lb-title">🏆 排行榜</div>${Levels.boardHtml(GAME_ID, playerName, 5)}`,
+    onNext: () => startLevel(i + 1),
+    onExit: showMap,
+  });
+}
+
+showStart();
+</script>
+</body>
+</html>

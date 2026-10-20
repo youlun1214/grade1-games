@@ -32,7 +32,8 @@
 - 共用圖片放 `assets/`（`monsters/`、`player/`、`backgrounds/`、`ui/`），規格見 `assets/README.md`
 - 兒子的真實照片只放 `assets/_private/`（已 gitignore，不上 GitHub）；遊戲裡只用 AI 畫的卡通版角色
 - 對戰模式規則（血量、攻擊力、怪獸反擊）見 `docs/battle-rules.md`
-- 共用程式放 `shared/`：`battle.js`＋`battle.css`（打怪獸引擎，數字都在 `RULES`）、`sound.js`（音效＋語音）。新遊戲要對戰時呼叫 `Battle.start()`，只需提供出題、畫題目、唸題目三個函式
+- 共用程式放 `shared/`：`battle.js`＋`battle.css`（打怪獸引擎，寶可夢 GB 風格，數字都在 `RULES`）、`levels.js`＋`levels.css`（10 隻怪獸、每關血量與秒數 `TIMING`、輸入名字的開始畫面、每位玩家的挑戰紀錄、關卡地圖、排行榜；紀錄存在這台裝置的瀏覽器）、`sound.js`（音效＋語音）。新遊戲要對戰時呼叫 `Battle.start()`，只需提供出題、畫題目、唸題目三個函式
+- 兒子學校用書：國語康軒、數學**翰林**。課程範圍與題型設計依 `docs/curriculum-grade1.md`（學校 115 學年度進度總表；學校名稱與連結只記在 Obsidian 的〈學校課程進度（私人）〉，不寫進 repo）
 - 圖片沒放時自動用 emoji 暫代；檔名照 `assets/README.md` 放進去就會自動換上
 
 ## 遊戲清單
@@ -42,7 +43,7 @@
 - [🍎 10 以內加減](tools/math-add-within-10/)：⚔️ 打怪獸對戰＋📝 練習兩種模式；加法／減法／混合，有圖示輔助數數與語音唸題
 
 ### ㄅ 注音
-- （尚無）
+- [ㄅ 注音打怪獸](tools/zhuyin-battle/)：康軒首冊 9 課＋魔王關共 10 關，寶可夢 GB 風格對戰；7 種題型（聽音找圖、看圖找第一個音、看圖選注音、看注音選圖、缺符號、第幾聲、三拼音），題庫在 `bank.js`；開始時輸入名字，記錄每個人的挑戰紀錄，結算時顯示排行榜
 
 ## 工作注意事項
 - repo 是公開的：孩子資料不放真實姓名、照片、學校等可識別資訊（用暱稱即可）

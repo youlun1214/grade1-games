@@ -230,20 +230,17 @@ function startBattle(m) {
       el.innerHTML = `<div class="eq">${eqHtml(q)}</div><div class="pics"></div>`;
       renderPics(q, el.querySelector('.pics'));
     },
-    revealAnswer: (q, el) => {
-      const qs = el.querySelector('.q'); qs.textContent = q.ans; qs.classList.add('done');
-    },
     speech: speechOf,
-    color: COLOR[m],
-    monster: { name: '恐龍', emoji: '🦖', img: {
-      idle: '../../assets/monsters/dino-green.png',
-      hurt: '../../assets/monsters/dino-green-hurt.png',
-      down: '../../assets/monsters/dino-green-down.png' } },
-    player: { name: '我', emoji: '🧒', img: {
+    level: { no: 1, title: '10 以內加減', monster: { name: '暴暴龍', emoji: '🦖', moves: ['甩尾巴', '大地重踩'], img: {
+      idle: '../../assets/monsters/monster-09.png',
+      hurt: '../../assets/monsters/monster-09-hurt.png',
+      down: '../../assets/monsters/monster-09-down.png' } } },
+    exitLabel: '回選單',
+    player: { name: '我', emoji: '🧒', moves: ['數字拳', '加法飛踢'], img: {
       idle: '../../assets/player/player.png',
       attack: '../../assets/player/player-attack.png',
       hurt: '../../assets/player/player-hurt.png' } },
-    background: '../../assets/backgrounds/forest.jpg',
+    background: '../../assets/backgrounds/battle.jpg',
     onExit: () => show('start'),
   });
 }
