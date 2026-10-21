@@ -4,8 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>10 以內加減</title>
+<link rel="stylesheet" href="../../shared/ui.css">
 <link rel="stylesheet" href="../../shared/battle.css">
 <script src="../../shared/sound.js"></script>
+<script src="../../shared/music.js"></script>
+<script src="../../shared/zhuyin.js"></script>
+<script src="../../shared/icons.js"></script>
 <script src="../../shared/battle.js"></script>
 <style>
   :root { --bg:#fff8e7; --card:#fff; --ink:#3b2f2f; --muted:#9a8f86;
@@ -30,7 +34,7 @@
   .modes.fight button { padding:26px 6px; }
 
   /* 打怪獸畫面裡的題目縮小一點 */
-  #battle { padding:0 16px; }
+  #battle { padding:0 10px; max-width:780px; background:linear-gradient(#2a3a8a, #141a3a); }
   .bt-q .eq { font-size:clamp(2.4rem,11vw,3.8rem); }
   .bt-q .pics { margin-top:8px; min-height:0; }
   .bt-q .group { font-size:clamp(1.3rem,5vw,2rem); }
@@ -231,17 +235,19 @@ function startBattle(m) {
       renderPics(q, el.querySelector('.pics'));
     },
     speech: speechOf,
-    level: { no: 1, title: '10 以內加減', monster: { name: '暴暴龍', emoji: '🦖', moves: ['甩尾巴', '大地重踩'], img: {
-      idle: '../../assets/monsters/monster-09.png',
-      hurt: '../../assets/monsters/monster-09-hurt.png',
-      down: '../../assets/monsters/monster-09-down.png' } } },
+    level: { no: 1, title: '10 以內加減', monster: { name: '雷德王', emoji: '🦖', moves: ['丟大石頭', '頭槌'], img: {
+      idle: '../../assets/monsters/monster-04.png',
+      hurt: '../../assets/monsters/monster-04-hurt.png',
+      down: '../../assets/monsters/monster-04-down.png' } } },
     exitLabel: '回選單',
-    player: { name: '我', emoji: '🧒', moves: ['數字拳', '加法飛踢'], img: {
+    player: { name: '我', emoji: '🧒', moves: ['數字光線', '加法飛踢'], img: {
       idle: '../../assets/player/player.png',
-      attack: '../../assets/player/player-attack.png',
+      pose: '../../assets/player/player-pose.png',
+      win: '../../assets/player/player-win.png',
+      attack: ['attack', 'kick', 'fire', 'fire2', 'punch', 'slash', 'spin'].map(n => `../../assets/player/player-${n}.png`),
       hurt: '../../assets/player/player-hurt.png' } },
-    background: '../../assets/backgrounds/battle.jpg',
-    onExit: () => show('start'),
+    background: '../../assets/backgrounds/scene-04.jpg',   // 雷德王的山谷場景
+    onExit: () => { show('start'); window.Music && Music.play('title'); },
   });
 }
 

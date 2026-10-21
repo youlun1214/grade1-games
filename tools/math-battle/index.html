@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>數學打怪獸</title>
+<link rel="stylesheet" href="../../shared/ui.css">
+<link rel="stylesheet" href="../../shared/battle.css">
+<link rel="stylesheet" href="../../shared/levels.css">
+<script src="../../shared/sound.js"></script>
+<script src="../../shared/music.js"></script>
+<script src="../../shared/zhuyin.js"></script>
+<script src="../../shared/icons.js"></script>
+<script src="../../shared/battle.js"></script>
+<script src="../../shared/levels.js"></script>
+<script src="bank.js"></script>
+<style>
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { margin:0; background:#141a3a; color:#1d2340; user-select:none; font-family:var(--font); }
+  .screen { display:none; min-height:100%; max-width:780px; margin:0 auto; }
+  .screen.on { display:block; }
+  #battle { padding:0 10px; background:linear-gradient(#2a3a8a, #141a3a); }
+  button { font-family:inherit; cursor:pointer; }
+
+  /* ===== 題目框裡的樣式 ===== */
+  .mq-prompt { font-size:clamp(1.4rem,5.4vw,1.95rem); font-weight:900; color:#1d2340; line-height:1.5; }
+  .mq-big { font-size:clamp(2.4rem,11vw,3.4rem); font-weight:900; color:#1d2340; line-height:1.15; letter-spacing:.04em; }
+  .mq-big .q, .mq-split .q { color:#e8443a; }
+  .mq-emoji { font-size:clamp(2.2rem,10vw,3rem); line-height:1; }
+  .mq-emoji.big { font-size:clamp(3.4rem,15vw,4.6rem); margin-top:4px; }
+  .mq-center { margin-top:6px; }
+
+  /* 一堆東西：每 5 個一組 */
+  .mq-pile { display:flex; flex-wrap:wrap; justify-content:center; gap:4px 12px; margin-top:6px; font-size:clamp(1.5rem,6vw,2.1rem); line-height:1.1; }
+  .mq-five { display:inline-flex; gap:1px; }
+  .mq-five i { font-style:normal; position:relative; }
+  .mq-five i.gone { opacity:.35; }
+  .mq-five i.gone::after { content:"✕"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#e8443a; font-weight:900; }
+  .mq-empty { font-size:3rem; }
+  .mq-pile .ic { width:1.65em; height:1.65em; }
+  .mq-row .ic { width:1.7em; height:1.7em; }
+  .mq-center .ic.big { width:clamp(90px,22vw,130px); height:clamp(90px,22vw,130px); }
+  .bt-choices .ic.ch { width:clamp(52px,12vw,76px); height:clamp(52px,12vw,76px); }
+  .mq-two { display:flex; flex-direction:column; gap:4px; align-items:center; margin-top:4px; }
+  .mq-two > div { display:flex; align-items:center; gap:8px; }
+  .mq-two > div > b { font-size:1rem; color:#5a6890; min-width:2.6em; text-align:right; }
+  .mq-two > div .mq-pile { margin-top:0; justify-content:flex-start; }
+  .mq-two.row { flex-direction:row; flex-wrap:wrap; justify-content:center; gap:4px 10px; }
+  .mq-two.row em { font-style:normal; font-size:2rem; font-weight:900; color:#5a6890; }
+
+  /* 選項裡的圓點、色塊、形狀 */
+  .mq-dots { font-size:clamp(.9rem,3.6vw,1.25rem); letter-spacing:.05em; color:#2f7de1; max-width:5.6em; line-height:1.25; word-break:break-all; text-align:center; }
+  .mq-swatch { display:inline-block; width:1em; height:1em; border-radius:6px; background:var(--c); margin-right:6px; border:2px solid #1d2340; vertical-align:-.1em; }
+  .bt-choices button:has(.mq-swatch), .bt-choices button:has(small) { font-size:clamp(1.3rem,5.2vw,1.7rem); }
+  .bt-choices button small { display:block; font-size:1rem; margin-top:2px; }
+  .bt-choices button:has(small) .bt-c { display:flex; flex-direction:column; align-items:center; }
+  .mq-shape { stroke:#1d2340; stroke-width:4; }
+
+  /* 長條（比長短） */
+  .mq-bars { display:flex; flex-direction:column; gap:8px; align-items:flex-start; margin:8px auto 0; width:min(100%, 440px); }
+  .mq-bar { height:24px; width:calc(var(--w) * 10%); background:var(--c); border:3px solid #1d2340; border-radius:6px; display:flex; }
+  .mq-bar b { flex:1; border-right:2px solid rgba(255,255,255,.85); }
+  .mq-bar b:last-child { border-right:0; }
+
+  /* 順序：一排動物 */
+  .mq-row { display:flex; justify-content:center; align-items:center; gap:4px; font-size:clamp(1.8rem,7.5vw,2.6rem); margin-top:6px; }
+  .mq-row i { font-style:normal; }
+  .mq-row em { font-style:normal; font-size:.8em; }
+
+  /* 分與合 */
+  .mq-split { display:flex; align-items:center; justify-content:center; gap:14px; font-size:clamp(2rem,9vw,2.8rem); font-weight:900; margin-top:4px; }
+  .mq-whole { display:inline-flex; align-items:center; justify-content:center; width:1.8em; height:1.8em; border-radius:50%; background:#ffe066; border:3px solid #1d2340; }
+  .mq-parts { display:flex; gap:10px; }
+  .mq-parts span { display:inline-flex; align-items:center; justify-content:center; width:1.6em; height:1.6em; border-radius:12px; background:#dff1ff; border:3px solid #1d2340; }
+  .mq-dotline { color:#2f7de1; font-size:1.3rem; letter-spacing:.1em; margin-top:4px; }
+  .mq-dotline .faint { color:#b8c6dc; }
+  .mq-frame { display:grid; grid-template-columns:repeat(5, 30px); gap:4px; justify-content:center; margin-top:8px; }
+  .mq-frame b { width:30px; height:30px; border-radius:50%; border:3px solid #1d2340; background:#fff; }
+  .mq-frame b.on { background:#e8443a; }
+
+  /* 30 以內的數：一捆十根＋單根 */
+  .mq-sticks { display:flex; justify-content:center; align-items:flex-end; gap:12px; margin-top:8px; }
+  .mq-ten, .mq-ones { display:inline-flex; gap:2px; padding:4px; }
+  .mq-ten { border:3px solid #e8443a; border-radius:8px; background:#fff3f0; }
+  .mq-ten b, .mq-ones b { width:6px; height:52px; background:#f0a800; border-radius:3px; border:1px solid #8a5a00; }
+  .mq-ones { gap:6px; }
+</style>
+</head>
+<body>
+
+<!-- 開始：輸入名字 -->
+<section class="screen on" id="start"></section>
+
+<!-- 關卡地圖 -->
+<section class="screen" id="map"></section>
+
+<!-- 排行榜 -->
+<section class="screen" id="board"></section>
+
+<!-- 對戰（畫面由 shared/battle.js 產生）-->
+<section class="screen" id="battle"></section>
+
+<script>
+const BASE = '../../';           // 回到專案根目錄
+const GAME_ID = 'math-battle';   // 存紀錄用（和注音打怪獸分開）
+const TITLE = '🔢 數學打怪獸';
+const LEVELS = MathBank.levels();
+const $ = id => document.getElementById(id);
+let playerName = '';
+let backTo = 'start';            // 排行榜按「返回」要回到哪裡
+
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); window.scrollTo(0, 0); }
+
+function showStart() {
+  show('start');
+  Levels.renderStart($('start'), {
+    gameId: GAME_ID, title: '數學打怪獸', homeHref: BASE, base: BASE,
+    subtitle: '翰林一上 9 單元＋魔王關，一關一隻怪獸！',
+    onStart: name => { playerName = name; showMap(); },
+    onBoard: () => showBoard('start'),
+  });
+}
+
+function showMap() {
+  show('map');
+  Levels.renderMap($('map'), {
+    gameId: GAME_ID, name: playerName, base: BASE, levels: LEVELS, title: TITLE,
+    onPick: startLevel,
+    onSwitch: showStart,
+    onBoard: () => showBoard('map'),
+  });
+}
+
+function showBoard(from) {
+  backTo = from;
+  show('board');
+  Levels.renderBoard($('board'), {
+    gameId: GAME_ID, title: TITLE, name: playerName,
+    onBack: () => backTo === 'map' ? showMap() : showStart(),
+  });
+}
+
+function startLevel(i) {
+  show('battle');
+  Battle.start({
+    root: $('battle'),
+    level: { no: i + 1, title: LEVELS[i].title, monster: Levels.monster(i, BASE), rules: Levels.TIMING[i] },
+    player: Levels.player(BASE, ['數字光線', '加法飛踢', '算式火焰拳', '光之斬擊'], playerName, Levels.getPlayer(GAME_ID, playerName).best + 1),
+    nextQuestion: last => MathBank.question(i + 1, last),
+    renderQuestion: (q, el) => { el.innerHTML = q.html; },
+    speech: q => q.speech,
+    answerText: q => q.answerText,
+    background: Levels.scene(i, BASE),   // 每一關有自己的場景
+    hasNext: i < LEVELS.length - 1,
+    isLast: i === LEVELS.length - 1,
+    // 每場打完都記錄，結算畫面附上排行榜
+    onEnd: r => Levels.recordResult(GAME_ID, playerName, i + 1, r, LEVELS.length),
+    overExtra: () => `<div class="lb-title">🏆 排行榜</div>${Levels.boardHtml(GAME_ID, playerName, 5)}`,
+    onNext: () => startLevel(i + 1),
+    onExit: showMap,
+  });
+}
+
+showStart();
+</script>
+</body>
+</html>

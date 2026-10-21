@@ -2,19 +2,20 @@
 // 數學、注音遊戲共用。搭配 shared/levels.css 使用
 // 紀錄存在這台裝置的瀏覽器裡（換平板或清除瀏覽資料就會不見）
 (function () {
-  // ===== 10 隻怪獸（數學、注音共用同一組圖）=====
+  // ===== 10 隻怪獸：奧特曼經典怪獸，由弱到強（數學、注音共用同一組圖）=====
   // 圖片放在 assets/monsters/monster-01.png、monster-01-hurt.png、monster-01-down.png …
+  // 畫圖需求見 docs/art-brief-for-gpt.md；emoji 是還沒放圖時的暫代
   const MONSTERS = [
-    { name: '蛋蛋龍',   emoji: '🐣', moves: ['蛋殼撞擊', '啾啾叫'] },
-    { name: '黏黏蝸',   emoji: '🐌', moves: ['黏液噴射', '慢慢滾'] },
-    { name: '呱呱蛙',   emoji: '🐸', moves: ['水槍', '舌頭鞭'] },
-    { name: '硬殼龜',   emoji: '🐢', moves: ['縮殼衝撞', '水泡泡'] },
-    { name: '夾夾蟹',   emoji: '🦀', moves: ['大鉗子', '泡沫光線'] },
-    { name: '墨墨章魚', emoji: '🐙', moves: ['噴墨汁', '八爪纏繞'] },
-    { name: '黑翼蝙蝠', emoji: '🦇', moves: ['超音波', '翅膀拍打'] },
-    { name: '月光狼',   emoji: '🐺', moves: ['月光咬', '狼嚎'] },
-    { name: '暴暴龍',   emoji: '🦖', moves: ['甩尾巴', '大地重踩'] },
-    { name: '魔王龍',   emoji: '🐉', moves: ['魔王火焰', '雷電吐息', '龍捲風'] },
+    { name: '卡內貢',       emoji: '👛', moves: ['吞金幣', '金幣噴射'] },
+    { name: '巴爾坦星人',   emoji: '🦞', moves: ['分身術', '大鉗子夾擊'] },
+    { name: '艾雷王',       emoji: '⚡', moves: ['放電攻擊', '尾巴纏繞'] },
+    { name: '雷德王',       emoji: '🦖', moves: ['丟大石頭', '頭槌'] },
+    { name: '哥莫拉',       emoji: '🦏', moves: ['超振動波', '尾巴甩擊'] },
+    { name: '貝蒙斯坦',     emoji: '🦅', moves: ['吸收光線', '肚子大嘴'] },
+    { name: '梅菲拉斯星人', emoji: '👽', moves: ['握手詭計', '黑暗光彈'] },
+    { name: '金古橋',       emoji: '🤖', moves: ['合體變形', '破壞光線'] },
+    { name: '傑頓',         emoji: '👾', moves: ['一兆度火球', '瞬間移動', '傑頓屏障'] },
+    { name: '貝利亞',       emoji: '😈', moves: ['貝利亞爪', '死亡光線', '黑暗衝擊'] },
   ];
 
   // ===== 每關的難度（規則說明見 docs/battle-rules.md）=====
@@ -26,6 +27,9 @@
     { monsterHp: 180, firstAttackAt: 7, attackEvery: 4 },
   ];
 
+  // 國字旁邊加注音（有載入 shared/zhuyin.js 才會加）
+  // 只加在：輸入名字的畫面（整頁）、關卡地圖和排行榜的大標題
+  const zy = el => { if (window.Zhuyin && el) window.Zhuyin.apply(el); };
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -36,10 +40,21 @@
     return Object.assign({}, MONSTERS[i], { img: { idle: `${p}.png`, hurt: `${p}-hurt.png`, down: `${p}-down.png` } });
   }
 
-  function player(base, moves, name) {
-    const p = `${base}assets/player/player`;
-    return { name: name || '我', emoji: '🧒', moves, img: { idle: `${p}.png`, attack: `${p}-attack.png`, hurt: `${p}-hurt.png` } };
+  // 玩家：小小英雄（assets/player/），攻擊時從 7 個招式動作隨機挑一個
+  function player(base, moves, name, lv) {
+    const p = n => `${base}assets/player/${n}.png`;
+    return {
+      name: name || '我', level: lv || 1, emoji: '🧒', moves,
+      img: {
+        idle: p('player'), pose: p('player-pose'), hurt: p('player-hurt'), win: p('player-win'),
+        attack: ['player-attack', 'player-kick', 'player-fire', 'player-fire2', 'player-punch', 'player-slash', 'player-spin'].map(p),
+      },
+    };
   }
+
+  // ===== 10 個關卡場景（assets/backgrounds/scene-01.jpg …）=====
+  const SCENES = ['城市廢墟', '宇宙太空站', '沙漠荒原', '山谷地形', '森林古遺跡', '火山熔岩', '夜晚都市', '沙漠機械基地', '宇宙浮島', '黑暗宇宙'];
+  const scene = (i, base) => `${base}assets/backgrounds/scene-${String(i + 1).padStart(2, '0')}.jpg`;
 
   // ===== 玩家紀錄 =====
   // { 名字: { name, unlocked, stars:{關卡:星數}, best, lastLevel, lastWon, plays, totalScore, lastPlayed } }
@@ -97,38 +112,48 @@
     }
     return `<table class="lb"><thead><tr><th>名次</th><th>名字</th><th>過關</th><th>⭐</th><th>總分</th></tr></thead><tbody>
       ${rows.map(({ p, i }) => `<tr class="${p.name === highlight ? 'me' : ''}">
-        <td>${MEDALS[i] || i + 1}</td><td class="lb-name">${esc(p.name)}</td>
+        <td>${MEDALS[i] || i + 1}</td><td class="lb-name no-zy">${esc(p.name)}</td>
         <td>${p.best ? '第 ' + p.best + ' 關' : '—'}</td><td>${totalStars(p)}</td><td>${p.totalScore}</td></tr>`).join('')}
       </tbody></table>`;
   }
 
   /**
-   * 開始畫面：輸入名字或選以前玩過的人
-   * o.gameId, o.title, o.subtitle, o.homeHref, o.onStart(name), o.onBoard()
+   * 開始畫面：輸入名字或選以前玩過的人（依設計總覽 01 開始畫面）
+   * o.gameId, o.title, o.subtitle, o.base, o.homeHref, o.onStart(name), o.onBoard()
    */
   function renderStart(el, o) {
     const players = Object.values(allPlayers(o.gameId)).map(p => getPlayer(o.gameId, p.name))
       .sort((a, b) => (b.lastPlayed || '').localeCompare(a.lastPlayed || ''));
     el.innerHTML = `
-      <div class="lv lv-start">
-        <a class="lv-home" href="${o.homeHref}">← 回首頁</a>
-        <h1>${o.title}</h1>
-        <p class="lv-sub">${o.subtitle || ''}</p>
+      <div class="lv lv-start" style="background-image:linear-gradient(rgba(20,10,40,.15), rgba(20,10,40,.55)), url('${scene(0, o.base)}')">
+        <div class="lv-bar">
+          <a class="ui-round" href="${o.homeHref}" aria-label="回首頁">⌂</a>
+          <span class="lv-bar-r"><button class="ui-round" data-music-toggle aria-label="背景音樂">🎵</button><button class="ui-round" data-act="board" aria-label="排行榜">🏆</button></span>
+        </div>
+        <div class="lv-hero-row">
+          <img class="lv-hero" src="${o.base}assets/player/player-pose.png" alt="" onerror="this.remove()">
+          <div class="lv-titles">
+            <div class="logo-text lv-logo">${o.title}</div>
+            <p class="lv-sub">${o.subtitle || ''}</p>
+          </div>
+        </div>
+        <button class="lv-voice" type="button" data-act="voice">🔊 聲音設定</button>
         <form class="lv-namebox">
           <label for="lv-name">你的名字是？</label>
           <input id="lv-name" maxlength="10" autocomplete="off" placeholder="中文、英文都可以">
-          <button type="submit">開始挑戰 ▶</button>
+          <button class="btn btn-gold" type="submit">開始挑戰 ▶</button>
           <p class="lv-err"></p>
         </form>
         ${players.length ? `<h2 class="lv-h2">之前玩過的人，點名字繼續</h2>
           <div class="lv-players">${players.map(p => `
             <button class="lv-player" data-name="${esc(p.name)}">
-              <span class="lv-pname">🧒 ${esc(p.name)}</span>
+              <span class="lv-pname">🧒 <span class="no-zy">${esc(p.name)}</span> <small>Lv.${p.best + 1}</small></span>
               <span class="lv-plast">${lastText(p)}</span>
-              <span class="lv-pstar">⭐ ${totalStars(p)}・${p.best ? `過到第 ${p.best} 關` : '還沒過關'}</span>
+              <span class="lv-pstar">⭐ ${totalStars(p)}</span>
             </button>`).join('')}</div>` : ''}
-        <button class="lv-boardbtn" data-act="board">🏆 排行榜</button>
       </div>`;
+    zy(el);
+    window.Music && Music.play('title');
     const input = el.querySelector('#lv-name');
     el.querySelector('form').onsubmit = e => {
       e.preventDefault();
@@ -139,51 +164,55 @@
     };
     el.querySelectorAll('.lv-player').forEach(b => b.onclick = () => { setCurrent(o.gameId, b.dataset.name); o.onStart(b.dataset.name); });
     el.querySelector('[data-act="board"]').onclick = o.onBoard;
+    el.querySelector('[data-act="voice"]').onclick = () => window.Sound && Sound.openPicker();
   }
 
   /**
-   * 關卡地圖
+   * 關卡地圖（依設計總覽 03 選擇關卡：星空背景、圓形關卡按鈕、魔王關紅色發光）
    * o.gameId, o.name, o.title, o.base, o.levels:[{ title, desc }], o.onPick(index), o.onSwitch(), o.onBoard()
    */
   function renderMap(el, o) {
     const p = getPlayer(o.gameId, o.name);
-    const cards = o.levels.map((lv, i) => {
+    const total = o.levels.length;
+    const node = (lv, i) => {
       const no = i + 1, m = monster(i, o.base);
-      const locked = no > p.unlocked;
+      const locked = no > p.unlocked, boss = no === total;
       const s = p.stars[no] || 0;
-      return `<button class="lv-card${locked ? ' locked' : ''}${no === o.levels.length ? ' boss' : ''}${no === p.lastLevel ? ' last' : ''}" data-i="${i}" ${locked ? 'disabled' : ''}>
-        <span class="lv-no">第 ${no} 關${no === o.levels.length ? '・魔王' : ''}${no === p.lastLevel ? '・上次' : ''}</span>
-        <span class="lv-mon" data-img="${m.img.idle}">${locked ? '🔒' : m.emoji}</span>
-        <span class="lv-title">${lv.title}</span>
-        <span class="lv-desc">${lv.desc || ''}</span>
-        <span class="lv-stars">${locked ? '' : '⭐'.repeat(s) + `<i>${'⭐'.repeat(3 - s)}</i>`}</span>
+      return `<button class="lv-node${locked ? ' locked' : ''}${boss ? ' boss' : ''}${no === p.lastLevel ? ' last' : ''}${no === p.unlocked && !locked ? ' next' : ''}"
+                data-i="${i}" ${locked ? 'disabled' : ''} aria-label="第 ${no} 關 ${esc(lv.title)}">
+        <span class="lv-ring"><img src="${m.img.idle}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'${m.emoji}'}))"></span>
+        <span class="lv-no">${no}</span>
+        ${locked ? '<span class="lv-lock">🔒</span>' : ''}
+        <span class="lv-stars">${Array.from({ length: 3 }, (_, k) => `<span class="ui-star${k < s ? '' : ' off'}">⭐</span>`).join('')}</span>
+        <span class="lv-title">${esc(lv.title)}</span>
       </button>`;
-    }).join('');
+    };
+    const half = Math.ceil(total / 2);
     el.innerHTML = `
-      <div class="lv">
+      <div class="lv lv-map bg-space">
         <div class="lv-bar">
-          <button class="lv-link" data-act="switch">← 換人</button>
-          <button class="lv-link" data-act="board">🏆 排行榜</button>
+          <button class="ui-round" data-act="switch" aria-label="換人">←</button>
+          <div class="lv-ribbon">選擇關卡</div>
+          <span class="lv-bar-r"><button class="ui-round" data-music-toggle aria-label="背景音樂">🎵</button><button class="ui-round" data-act="board" aria-label="排行榜">🏆</button></span>
         </div>
-        <h1>${o.title}</h1>
-        <div class="lv-who">🧒 <b>${esc(p.name)}</b>　${lastText(p)}</div>
-        <div class="lv-grid">${cards}</div>
-        <button class="lv-unlock" data-act="unlock">家長：幫 ${esc(p.name)} 解鎖全部關卡</button>
+        <div class="lv-who">${o.title}　🧒 <b class="no-zy">${esc(p.name)}</b> Lv.${p.best + 1}　${lastText(p)}</div>
+        <div class="lv-path">
+          <div class="lv-row">${o.levels.slice(0, half).map((lv, i) => node(lv, i)).join('<span class="lv-arrow">➜</span>')}</div>
+          <div class="lv-turn">⤵</div>
+          <div class="lv-row">${o.levels.slice(half).map((lv, i) => node(lv, i + half)).join('<span class="lv-arrow">➜</span>')}</div>
+        </div>
+        <button class="lv-unlock" data-act="unlock">家長：幫 <span class="no-zy">${esc(p.name)}</span> 解鎖全部關卡</button>
       </div>`;
-    // 有放怪獸圖就換上
-    el.querySelectorAll('.lv-card:not(.locked) .lv-mon').forEach(s => {
-      const im = new Image();
-      im.onload = () => { s.innerHTML = `<img src="${s.dataset.img}" alt="">`; };
-      im.src = s.dataset.img;
-    });
+    zy(el.querySelector('.lv-ribbon'));
+    window.Music && Music.play('map');
     el.onclick = e => {
-      const card = e.target.closest('.lv-card');
-      if (card && !card.disabled) return o.onPick(+card.dataset.i);
+      const n = e.target.closest('.lv-node');
+      if (n && !n.disabled) return o.onPick(+n.dataset.i);
       const act = e.target.closest('[data-act]')?.dataset.act;
       if (act === 'switch') o.onSwitch();
       else if (act === 'board') o.onBoard();
-      else if (act === 'unlock' && confirm(`要幫 ${p.name} 解鎖全部 ${o.levels.length} 關嗎？`)) {
-        const pp = getPlayer(o.gameId, o.name); pp.unlocked = o.levels.length; savePlayer(o.gameId, pp);
+      else if (act === 'unlock' && confirm(`要幫 ${p.name} 解鎖全部 ${total} 關嗎？`)) {
+        const pp = getPlayer(o.gameId, o.name); pp.unlocked = total; savePlayer(o.gameId, pp);
         renderMap(el, o);
       }
     };
@@ -192,16 +221,18 @@
   /** 排行榜頁：o.gameId, o.title, o.name（要標出來的人）, o.onBack() */
   function renderBoard(el, o) {
     el.innerHTML = `
-      <div class="lv">
-        <div class="lv-bar"><button class="lv-link" data-act="back">← 返回</button></div>
-        <h1>🏆 排行榜</h1>
+      <div class="lv lv-board bg-space">
+        <div class="lv-bar"><button class="ui-round" data-act="back" aria-label="返回">←</button><button class="ui-round" data-music-toggle aria-label="背景音樂">🎵</button></div>
+        <div class="logo-text lv-logo">🏆 排行榜</div>
         <p class="lv-sub">${o.title}・先比過到第幾關，再比星星和總分</p>
         ${boardHtml(o.gameId, o.name)}
         <p class="lv-note">紀錄存在這台裝置上。總分＝每題答對 10 分＋暴擊 5 分＋過關時剩下的血量。</p>
       </div>`;
+    zy(el.querySelector('.lv-logo'));
+    window.Music && Music.play('map');
     el.querySelector('[data-act="back"]').onclick = o.onBack;
   }
 
-  window.Levels = { MONSTERS, TIMING, monster, player, current, setCurrent, getPlayer, recordResult, ranking, boardHtml,
+  window.Levels = { MONSTERS, TIMING, SCENES, scene, monster, player, current, setCurrent, getPlayer, recordResult, ranking, boardHtml,
                     renderStart, renderMap, renderBoard, totalStars };
 })();

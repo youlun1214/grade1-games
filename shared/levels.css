@@ -1,54 +1,78 @@
-/* 關卡地圖：搭配 shared/levels.js 使用 */
-.lv { width:100%; display:flex; flex-direction:column; align-items:center; padding:8px 0 24px; position:relative; }
-.lv-home { align-self:flex-start; color:#9a8f86; font-size:1.1rem; text-decoration:none; margin-bottom:4px; }
-.lv-bar { align-self:stretch; display:flex; justify-content:space-between; }
-.lv-link { background:none; border:0; color:#6b5f57; font-size:1.2rem; font-family:inherit; padding:6px 0; }
-.lv-who { font-size:1.3rem; margin:0 0 16px; text-align:center; }
-.lv-card.last { box-shadow:0 0 0 4px #ffb020, 0 5px 0 rgba(0,0,0,.15); }
+/* 開始畫面、關卡地圖、排行榜：搭配 shared/ui.css、shared/levels.js 使用
+   依「小一打怪獸 遊戲設計總覽」01 開始畫面、03 選擇關卡 */
+.lv { width:100%; min-height:100dvh; display:flex; flex-direction:column; align-items:center; padding:12px 14px 28px;
+      position:relative; font-family:var(--font); border-radius:0; background-size:cover; background-position:center; }
+.lv-bar { align-self:stretch; display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.lv-bar a.ui-round { text-decoration:none; }
+.lv-bar-r { display:flex; gap:8px; }
+.lv-sub { color:#fff; font-size:1.15rem; font-weight:700; margin:6px 0 0; text-align:center; text-shadow:0 2px 4px rgba(0,0,0,.6); }
+.lv-logo { font-size:clamp(2.3rem,9vw,3.8rem); text-align:center; white-space:nowrap; }
 
-/* 開始畫面：輸入名字 */
-.lv-namebox { width:100%; max-width:460px; background:#fff; border:6px double #383838; border-radius:18px; padding:18px;
-              display:flex; flex-direction:column; gap:12px; }
-.lv-namebox label { font-size:1.6rem; font-weight:900; text-align:center; }
-.lv-namebox input { font-size:1.8rem; padding:12px 14px; border:3px solid #c8c0b8; border-radius:12px; text-align:center;
-                    font-family:inherit; user-select:text; }
-.lv-namebox input:focus { outline:none; border-color:#ff8a5b; }
-.lv-namebox button { font-size:1.7rem; padding:14px; border-radius:14px; background:#ff8a5b; color:#fff; border:4px solid #383838;
-                     font-weight:bold; font-family:inherit; }
-.lv-err { margin:0; min-height:1.3em; color:#e05555; text-align:center; font-size:1.1rem; }
-.lv-h2 { font-size:1.3rem; margin:24px 0 10px; color:#6b5f57; }
+/* ===== 01 開始畫面：英雄＋logo＋輸入名字 ===== */
+.lv-start { background-color:#2a1a4a; }
+.lv-hero-row { display:flex; align-items:flex-end; justify-content:center; gap:4px; width:100%; max-width:640px; margin-top:6px; }
+.lv-hero { height:min(30vh, 280px); width:auto; filter:drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+.lv-titles { display:flex; flex-direction:column; align-items:center; padding-bottom:16px; }
+.lv-namebox { width:100%; max-width:460px; background:rgba(255,255,255,.95); border:4px solid #1d2340; border-radius:22px; padding:16px 18px;
+              display:flex; flex-direction:column; gap:10px; margin-top:14px; box-shadow:0 6px 0 rgba(0,0,0,.3); }
+.lv-namebox label { font-size:1.5rem; font-weight:900; text-align:center; color:#1d2340; }
+.lv-namebox input { font-family:var(--font); font-size:1.7rem; font-weight:700; padding:10px 14px; border:3px solid #7fb4e8; border-radius:14px;
+                    text-align:center; user-select:text; color:#1d2340; }
+.lv-namebox input:focus { outline:none; border-color:var(--gold-2); }
+.lv-voice { margin-top:10px; background:rgba(16,24,56,.65); color:#fff; border:2px solid rgba(255,255,255,.7); border-radius:999px; padding:6px 18px; font-family:var(--font); font-weight:700; font-size:1.05rem; cursor:pointer; }
+.lv-err { margin:0; min-height:1.2em; color:#e05555; text-align:center; font-size:1.05rem; font-weight:700; }
+.lv-h2 { font-size:1.2rem; margin:20px 0 8px; color:#fff; text-shadow:0 2px 4px rgba(0,0,0,.6); }
 .lv-players { display:grid; gap:10px; width:100%; max-width:460px; }
-.lv-player { display:grid; grid-template-columns:1fr auto; gap:2px 8px; text-align:left; padding:12px 16px; border-radius:16px;
-             background:#fff; border:3px solid #383838; font-family:inherit; color:#2a2a2a; }
-.lv-pname { font-size:1.5rem; font-weight:900; }
-.lv-plast { grid-column:1; font-size:1.05rem; color:#6b5f57; }
-.lv-pstar { grid-column:2; grid-row:1 / span 2; align-self:center; font-size:1rem; color:#9a8f86; }
-.lv-boardbtn { margin-top:20px; font-size:1.4rem; padding:12px 28px; border-radius:14px; background:#fff4e0; border:3px solid #c04020;
-               font-family:inherit; font-weight:bold; color:#2a2a2a; }
+.lv-player { display:grid; grid-template-columns:1fr auto; gap:2px 8px; text-align:left; padding:10px 16px; border-radius:16px; cursor:pointer;
+             background:linear-gradient(#ffffff, #dff1ff); border:3px solid #1d2340; font-family:var(--font); color:#1d2340; box-shadow:0 4px 0 rgba(0,0,0,.3); }
+.lv-player:active { transform:translateY(2px); }
+.lv-pname { font-size:1.4rem; font-weight:900; }
+.lv-pname small { font-size:.75em; color:var(--gold-3); }
+.lv-plast { grid-column:1; font-size:1rem; color:#4a5578; font-weight:700; }
+.lv-pstar { grid-column:2; grid-row:1 / span 2; align-self:center; font-size:1.2rem; font-weight:900; }
 
-/* 排行榜 */
-.lb { width:100%; max-width:520px; border-collapse:collapse; background:#fff; border-radius:14px; overflow:hidden; margin:6px 0; }
-.lb th { background:#383838; color:#fff; font-size:1rem; padding:6px 4px; }
-.lb td { font-size:1.15rem; padding:7px 4px; text-align:center; border-bottom:1px solid #eee; }
-.lb td.lb-name { font-weight:bold; max-width:9em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.lb tr.me td { background:#fff1c2; }
-.lb-empty, .lv-note { color:#9a8f86; font-size:1rem; text-align:center; }
-.bt-over .lb td { font-size:1.05rem; padding:4px; }
-.bt-over .lb-title { font-size:1.1rem; font-weight:bold; margin-top:8px; }
-.lv h1 { font-size:clamp(2rem,8vw,3rem); margin:8px 0 4px; text-align:center; }
-.lv-sub { color:#9a8f86; font-size:1.2rem; margin:0 0 16px; text-align:center; }
-.lv-grid { display:grid; grid-template-columns:repeat(2, 1fr); gap:12px; width:100%; }
-@media (min-width:700px) { .lv-grid { grid-template-columns:repeat(3, 1fr); } }
-.lv-card { display:flex; flex-direction:column; align-items:center; gap:2px; padding:12px 8px; border-radius:18px;
-           background:#fff; color:#2a2a2a; border:4px solid #383838; box-shadow:0 5px 0 rgba(0,0,0,.15); font-family:inherit; }
-.lv-card:active { transform:scale(.97); }
-.lv-card.boss { grid-column:1 / -1; background:#fff4e0; border-color:#c04020; }
-.lv-card.locked { background:#ece8e2; border-color:#c8c0b8; box-shadow:none; color:#9a8f86; }
-.lv-no { font-size:1rem; font-weight:bold; color:#9a8f86; }
-.lv-mon { font-size:3.2rem; line-height:1.2; height:4rem; display:flex; align-items:center; }
-.lv-mon img { height:100%; width:auto; }
-.lv-title { font-size:1.3rem; font-weight:900; }
-.lv-desc { font-size:1.05rem; color:#6b5f57; min-height:1.3em; letter-spacing:.05em; }
-.lv-stars { font-size:1.3rem; min-height:1.6rem; }
-.lv-stars i { font-style:normal; filter:grayscale(1); opacity:.3; }
-.lv-unlock { margin-top:28px; background:none; border:0; color:#b8aea4; font-size:.95rem; text-decoration:underline; font-family:inherit; }
+/* ===== 03 關卡地圖 ===== */
+.lv-ribbon { font-size:clamp(1.6rem,6vw,2.2rem); font-weight:900; color:#6a2e00; padding:6px 30px;
+             background:linear-gradient(var(--gold-1), var(--gold-2)); border:3px solid #fff; border-radius:12px;
+             box-shadow:0 4px 0 rgba(0,0,0,.35); clip-path:polygon(0 0, 100% 0, 94% 50%, 100% 100%, 0 100%, 6% 50%); }
+.lv-who { font-size:1.1rem; margin:12px 0 4px; text-align:center; color:#dfe8ff; font-weight:700; }
+.lv-who b { color:#ffe066; }
+.lv-path { width:100%; max-width:760px; display:flex; flex-direction:column; align-items:stretch; margin:auto 0; padding:10px 0; }
+.lv-map .lv-unlock { margin-top:10px; }
+.lv-row { display:flex; align-items:flex-start; justify-content:center; }
+.lv-arrow { align-self:center; margin-top:-46px; width:clamp(12px,3vw,26px); text-align:center; overflow:visible; color:#7fd0ff; font-size:clamp(1rem,3.5vw,1.6rem); text-shadow:0 0 8px #3aa0ff; flex:none; }
+.lv-turn { text-align:right; padding-right:7%; font-size:2.2rem; color:#7fd0ff; text-shadow:0 0 8px #3aa0ff; line-height:1; margin:-4px 0; }
+.lv-node { position:relative; flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:2px;
+           background:none; border:0; padding:6px 2px; color:#fff; font-family:var(--font); cursor:pointer; }
+.lv-ring { width:clamp(58px, 15vw, 112px); aspect-ratio:1; border-radius:50%; display:flex; align-items:flex-end; justify-content:center; overflow:hidden;
+           background:radial-gradient(circle at 50% 35%, #5a7bd8, #1d2a6c 70%); border:4px solid var(--gold-1);
+           box-shadow:0 0 0 3px #7a4a00, 0 0 18px rgba(120,190,255,.6); }
+.lv-ring img { width:92%; height:92%; object-fit:contain; object-position:bottom; }
+.lv-ring span { font-size:clamp(2rem,8vw,3.4rem); line-height:1.3; }
+.lv-no { position:absolute; top:0; left:50%; transform:translate(-50%, -30%); min-width:30px; padding:0 6px; border-radius:999px;
+         background:linear-gradient(#6fd0ff, #1e8cff); border:2px solid #fff; font-weight:900; font-size:1rem; box-shadow:0 2px 0 rgba(0,0,0,.4); }
+.lv-lock { position:absolute; top:28%; left:50%; transform:translateX(-50%); font-size:clamp(1.4rem,5vw,2rem); }
+.lv-stars { font-size:clamp(.75rem,2.8vw,1.1rem); letter-spacing:-.05em; }
+.lv-title { font-size:clamp(.75rem,2.8vw,1rem); font-weight:700; color:#cfe0ff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.lv-node:active .lv-ring { transform:scale(.95); }
+.lv-node.locked .lv-ring { filter:grayscale(1) brightness(.55); border-color:#888; box-shadow:0 0 0 3px #333; }
+.lv-node.locked { cursor:default; }
+.lv-node.next .lv-ring { animation:lv-glow 1.2s ease-in-out infinite alternate; }
+.lv-node.boss .lv-ring { width:clamp(64px, 17vw, 124px); border-color:#ff4a3a; background:radial-gradient(circle at 50% 35%, #a02a3a, #2a0a1a 70%);
+                         box-shadow:0 0 0 3px #5a0000, 0 0 26px rgba(255,60,60,.85); }
+.lv-node.boss .lv-no { background:linear-gradient(#ff8a6a, #e2321e); }
+@keyframes lv-glow { from { box-shadow:0 0 0 3px #7a4a00, 0 0 10px rgba(255,224,102,.5); } to { box-shadow:0 0 0 3px #7a4a00, 0 0 28px rgba(255,224,102,1); } }
+.lv-unlock { margin-top:28px; background:none; border:0; color:#8fa0d0; font-size:.95rem; text-decoration:underline; font-family:var(--font); cursor:pointer; }
+
+/* ===== 排行榜 ===== */
+.lb { width:100%; max-width:520px; border-collapse:separate; border-spacing:0; background:rgba(255,255,255,.96); border-radius:16px; overflow:hidden;
+      margin:10px 0; color:#1d2340; border:3px solid #1d2340; }
+.lb th { background:#1d2340; color:#ffe066; font-size:1rem; padding:7px 4px; }
+.lb td { font-size:1.15rem; padding:7px 4px; text-align:center; border-bottom:1px solid #e3eaf5; font-weight:700; }
+.lb td.lb-name { font-weight:900; max-width:9em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.lb tr.me td { background:#fff1b8; }
+.lb-empty, .lv-note { color:#cfd8f0; font-size:1rem; text-align:center; }
+.bt-over .lb { max-width:440px; }
+.bt-over .lb td { font-size:1rem; padding:4px; }
+.bt-over .lb-title { font-size:1.15rem; font-weight:900; margin-top:12px; }
+.bt-over.win .lb-title { color:#4a1d00; }

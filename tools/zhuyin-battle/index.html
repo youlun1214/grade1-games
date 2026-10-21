@@ -4,33 +4,39 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>注音打怪獸</title>
+<link rel="stylesheet" href="../../shared/ui.css">
 <link rel="stylesheet" href="../../shared/battle.css">
 <link rel="stylesheet" href="../../shared/levels.css">
 <script src="../../shared/sound.js"></script>
+<script src="../../shared/music.js"></script>
+<script src="../../shared/zhuyin.js"></script>
+<script src="../../shared/icons.js"></script>
 <script src="../../shared/battle.js"></script>
 <script src="../../shared/levels.js"></script>
 <script src="bank.js"></script>
 <style>
-  :root { --bg:#fff8e7; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { height:100%; }
-  body { margin:0; background:var(--bg); color:#2a2a2a; user-select:none;
-         font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif; }
-  .screen { display:none; min-height:100%; max-width:760px; margin:0 auto; padding:0 16px; }
+  body { margin:0; background:#141a3a; color:#1d2340; user-select:none; font-family:var(--font); }
+  .screen { display:none; min-height:100%; max-width:780px; margin:0 auto; }
   .screen.on { display:block; }
+  #battle { padding:0 10px; background:linear-gradient(#2a3a8a, #141a3a); }
   button { font-family:inherit; cursor:pointer; }
 
   /* 題目框裡的樣式 */
-  .zq-prompt { font-size:clamp(1.15rem,4.6vw,1.5rem); font-weight:bold; }
+  .zq-prompt { font-size:clamp(1.45rem,5.6vw,2rem); font-weight:900; color:#1d2340; line-height:1.5; }
   .zq-pic { font-size:clamp(2.8rem,12vw,3.8rem); line-height:1.15; margin-top:2px; }
-  .zq-word { font-size:1.1rem; color:#9a8f86; }
-  .zq-zy { font-size:clamp(2.4rem,11vw,3.4rem); font-weight:bold; letter-spacing:.08em; line-height:1.2; margin-top:4px; }
+  .zq-pic .ic.big { width:1.6em; height:1.6em; }
+  .bt-choices .ic { width:clamp(56px,13vw,84px); height:clamp(56px,13vw,84px); }
+  .zq-pick .ic { width:clamp(46px,11vw,68px); height:clamp(46px,11vw,68px); }
+  .zq-word { font-size:1.1rem; color:#5a6890; font-weight:700; }
+  .zq-zy { font-size:clamp(2.4rem,11vw,3.4rem); font-weight:900; color:#1d2340; letter-spacing:.08em; line-height:1.2; margin-top:4px; }
   .zq-blank { display:inline-block; min-width:1em; color:#e05555; border-bottom:4px solid #e05555; }
   .zq-emoji { font-size:clamp(2.4rem,11vw,3.2rem); line-height:1; }
   .zq-tone { display:inline-block; min-width:1em; margin-right:6px; color:#d06020; }
   .bt-choices button:has(.zq-tone) { font-size:clamp(1.5rem,6.5vw,2rem); }
   .zq-pick { display:flex; flex-direction:column; align-items:center; line-height:1; }
-  .zq-pick small { font-size:1.1rem; color:#6b5f57; margin-top:4px; }
+  .zq-pick small { font-size:1.1rem; color:#5a6890; margin-top:4px; }
   .bt-choices button.right .zq-pick small { color:#fff; }
 </style>
 </head>
@@ -62,7 +68,7 @@ function show(id) { document.querySelectorAll('.screen').forEach(s => s.classLis
 function showStart() {
   show('start');
   Levels.renderStart($('start'), {
-    gameId: GAME_ID, title: TITLE, homeHref: BASE,
+    gameId: GAME_ID, title: '注音打怪獸', homeHref: BASE, base: BASE,
     subtitle: '康軒首冊 9 課＋魔王關，一關一隻怪獸！',
     onStart: name => { playerName = name; showMap(); },
     onBoard: () => showBoard('start'),
@@ -93,12 +99,12 @@ function startLevel(i) {
   Battle.start({
     root: $('battle'),
     level: { no: i + 1, title: LEVELS[i].title, monster: Levels.monster(i, BASE), rules: Levels.TIMING[i] },
-    player: Levels.player(BASE, ['注音拳', '拼音飛踢', '聲調光波'], playerName),
+    player: Levels.player(BASE, ['注音光線', '拼音飛踢', '聲調光波', '火焰拳', '光之斬擊'], playerName, Levels.getPlayer(GAME_ID, playerName).best + 1),
     nextQuestion: last => ZhuyinBank.question(i + 1, last),
     renderQuestion: (q, el) => { el.innerHTML = q.html; },
     speech: q => q.speech,
     answerText: q => q.answerText,
-    background: BASE + 'assets/backgrounds/battle.jpg',
+    background: Levels.scene(i, BASE),   // 每一關有自己的場景
     hasNext: i < LEVELS.length - 1,
     isLast: i === LEVELS.length - 1,
     // 每場打完都記錄，結算畫面附上排行榜

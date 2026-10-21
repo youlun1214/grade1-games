@@ -22,7 +22,7 @@
     馬 ㄇㄚˇ 🐴|鵝 ㄜˊ 🦢|虎 ㄏㄨˇ 🐯|豬 ㄓㄨ 🐷|茶 ㄔㄚˊ 🍵|車 ㄔㄜ 🚗
     魚 ㄩˊ 🐟|雨 ㄩˇ 🌧️|蛋 ㄉㄢˋ 🥚|狼 ㄌㄤˊ 🐺|鹿 ㄌㄨˋ 🦌|盤 ㄆㄢˊ 🍽️|帆 ㄈㄢ ⛵
     蛇 ㄕㄜˊ 🐍|書 ㄕㄨ 📖|樹 ㄕㄨˋ 🌳|手 ㄕㄡˇ ✋|耳 ㄦˇ 👂|杯 ㄅㄟ 🥤|山 ㄕㄢ ⛰️|碗 ㄨㄢˇ 🥣|船 ㄔㄨㄢˊ 🚢
-    狗 ㄍㄡˇ 🐶|牛 ㄋㄧㄡˊ 🐮|鳥 ㄋㄧㄠˇ 🐦|羊 ㄧㄤˊ 🐑|鴨 ㄧㄚ 🦆|牙 ㄧㄚˊ 🦷|球 ㄑㄧㄡˊ ⚽|燈 ㄉㄥ 💡|鼓 ㄍㄨˇ 🥁|蝦 ㄒㄧㄚ 🦐|象 ㄒㄧㄤˋ 🐘|奶 ㄋㄞˇ 🥛
+    狗 ㄍㄡˇ 🐶|猴 ㄏㄡˊ 🐵|牛 ㄋㄧㄡˊ 🐮|鳥 ㄋㄧㄠˇ 🐦|羊 ㄧㄤˊ 🐑|鴨 ㄧㄚ 🦆|牙 ㄧㄚˊ 🦷|球 ㄑㄧㄡˊ ⚽|燈 ㄉㄥ 💡|鼓 ㄍㄨˇ 🥁|蝦 ㄒㄧㄚ 🦐|象 ㄒㄧㄤˋ 🐘|奶 ㄋㄞˇ 🥛
     花 ㄏㄨㄚ 🌸|雞 ㄐㄧ 🐔|鞋 ㄒㄧㄝˊ 👟|火 ㄏㄨㄛˇ 🔥|鐘 ㄓㄨㄥ ⏰|傘 ㄙㄢˇ ☂️|腳 ㄐㄧㄠˇ 🦶|蛙 ㄨㄚ 🐸
     兔 ㄊㄨˋ 🐰|糖 ㄊㄤˊ 🍬|眼 ㄧㄢˇ 👁️|星 ㄒㄧㄥ ⭐|水 ㄕㄨㄟˇ 💧|龜 ㄍㄨㄟ 🐢|錢 ㄑㄧㄢˊ 💰|門 ㄇㄣˊ 🚪
     熊 ㄒㄩㄥˊ 🐻|床 ㄔㄨㄤˊ 🛏️|肉 ㄖㄡˋ 🍖|草 ㄘㄠˇ 🌿|圓 ㄩㄢˊ ⭕
@@ -75,10 +75,17 @@
   function usableWords(L) { return WORD_LIST.filter(w => w.level <= Math.min(L, 9)); }
 
   // 選一個單字：60% 考這一課的新字，其他複習前面學過的
+  const hasIcon = w => !!(window.Icons && window.Icons.has(w.w));
+  // 選項排序：有圖示的排前面（同樣有沒有圖示的再隨機），讓四個選項盡量都是圖示
+  const iconFirst = arr => arr.sort((a, b) => hasIcon(b) - hasIcon(a));
+
   function pickWord(L, last, filter = () => true) {
     const all = usableWords(L).filter(filter);
     const fresh = all.filter(w => w.level === L);
     let pool = (L <= 9 && fresh.length && Math.random() < .6) ? fresh : all;
+    // 有圖示的字比較好看，65% 的機會優先出有圖示的字
+    const withIcon = pool.filter(hasIcon);
+    if (withIcon.length && Math.random() < .65) pool = withIcon;
     const noRepeat = pool.filter(w => !last || w.w !== last.word);
     return pick(noRepeat.length ? noRepeat : pool);
   }
@@ -92,7 +99,11 @@
     return out;
   }
 
-  const pic = w => `<div class="zq-pic">${w.e}</div><div class="zq-word">${w.w}</div>`;
+  // 圖示：有 ChatGPT 畫的圖示就用（shared/icons.js），沒有就用 emoji 暫代
+  const icon = (w, cls) => (window.Icons ? window.Icons.html(w.w, w.e, cls) : `<span class="ic ic-emoji">${w.e}</span>`);
+  // 題目裡要考的字：不加注音（class no-zy），不然注音會直接告訴答案
+  const target = w => `<span class="no-zy">${w.w}</span>`;
+  const pic = w => `<div class="zq-pic">${icon(w, 'big')}</div><div class="zq-word no-zy">${w.w}</div>`;
   const big = s => `<div class="zq-zy">${s}</div>`;
   const prompt = s => `<div class="zq-prompt">${s}</div>`;
 
@@ -110,11 +121,12 @@
       const w = pick(words.filter(x => x.syms.includes(target)));
       // 干擾選項優先挑「有長得像的符號」的字，比較需要仔細聽
       const like = [...(LOOKALIKE[target] || '')];
-      const without = shuffle(words.filter(x => !x.syms.includes(target) && x.e !== w.e));
-      without.sort((a, b) => b.syms.some(s => like.includes(s)) - a.syms.some(s => like.includes(s)));
+      const without = iconFirst(shuffle(words.filter(x => !x.syms.includes(target) && x.e !== w.e)));
+      const score = x => (x.syms.some(s => like.includes(s)) ? 2 : 0) + (hasIcon(x) ? 1 : 0);   // 發音相近優先，其次有圖示
+      without.sort((a, b) => score(b) - score(a));
       const picks = shuffle([w, ...without.slice(0, 3)]);
       // 圖下面附小字，語音沒聲音時大人也能唸給孩子聽
-      const choices = picks.map(x => ({ html: `<span class="zq-pick"><span class="zq-emoji">${x.e}</span><small>${x.w}</small></span>`, value: x.w }));
+      const choices = picks.map(x => ({ html: `<span class="zq-pick">${icon(x)}<small class="no-zy">${x.w}</small></span>`, value: x.w }));
       return { word: target, html: prompt('聽一聽，哪一個有這個音？') + big(target),
                speech: `聽一聽，哪一個有這個音？${picks.map(x => x.w).join('，')}`,
                choices, ans: w.w, answerText: `${w.e} ${w.w}（${w.zy}）` };
@@ -124,7 +136,7 @@
       const w = pickWord(L, last, w => INITIALS.includes(w.syms[0]));
       const initials = learnedSyms(L).filter(s => INITIALS.includes(s));
       const choices = shuffle([w.syms[0], ...distract(w.syms[0], initials)]);
-      return { word: w.w, html: prompt(`「${w.w}」的第一個音是？`) + pic(w), speech: `${w.w}，${w.w}的第一個音是哪一個？`,
+      return { word: w.w, html: prompt(`「${target(w)}」的第一個音是？`) + pic(w), speech: `${w.w}，${w.w}的第一個音是哪一個？`,
                choices, ans: w.syms[0], answerText: w.syms[0] };
     },
     // 3. 看圖選注音
@@ -139,14 +151,14 @@
       if (w.tone !== 5) variants.add(fmt(w.syms, pick([1, 2, 3, 4].filter(t => t !== w.tone))));
       variants.delete(w.zy);
       const choices = shuffle([w.zy, ...shuffle([...variants]).slice(0, 3)]);
-      return { word: w.w, html: prompt(`「${w.w}」的注音是？`) + pic(w), speech: `${w.w}，${w.w}的注音是哪一個？`,
+      return { word: w.w, html: prompt(`「${target(w)}」的注音是？`) + pic(w), speech: `${w.w}，${w.w}的注音是哪一個？`,
                choices, ans: w.zy, answerText: w.zy };
     },
     // 4. 看注音選圖
     zy2pic(L, last) {
       const w = pickWord(L, last);
-      const others = shuffle(usableWords(L).filter(x => x.w !== w.w && x.e !== w.e)).slice(0, 3);
-      const choices = shuffle([w, ...others]).map(x => ({ html: `<span class="zq-emoji">${x.e}</span>`, value: x.w }));
+      const others = iconFirst(shuffle(usableWords(L).filter(x => x.w !== w.w && x.e !== w.e))).slice(0, 3);
+      const choices = shuffle([w, ...others]).map(x => ({ html: icon(x), value: x.w }));
       return { word: w.w, html: prompt('拼一拼，這是什麼？') + big(w.zy), speech: '看注音，拼一拼，這是什麼？',
                choices, ans: w.w, answerText: `${w.e} ${w.w}` };
     },
@@ -158,21 +170,21 @@
       const same = learnedSyms(L).filter(x => kindOf(x) === kindOf(s));
       const choices = shuffle([s, ...distract(s, same.length >= 4 ? same : learnedSyms(L))]);
       const toneMark = w.tone === 5 ? '' : TONE_MARK[w.tone];
-      return { word: w.w, html: prompt(`「${w.w}」少了哪一個？`) + pic(w) + big((w.tone === 5 ? '˙' : '') + shown.join('') + toneMark),
+      return { word: w.w, html: prompt(`「${target(w)}」少了哪一個？`) + pic(w) + big((w.tone === 5 ? '˙' : '') + shown.join('') + toneMark),
                speech: `${w.w}，${w.w}少了哪一個符號？`, choices, ans: s, answerText: s };
     },
     // 6. 第幾聲
     tone(L, last) {
       const w = pickWord(L, last, w => w.tone <= 4);
       const choices = [1, 2, 3, 4].map(t => ({ html: `<span class="zq-tone">${t === 1 ? 'ˉ' : TONE_MARK[t]}</span>${TONE_NAME[t]}`, value: t }));
-      return { word: w.w, html: prompt(`「${w.w}」是第幾聲？`) + pic(w) + big(w.syms.join('')), speech: `${w.w}，${w.w}是第幾聲？`,
+      return { word: w.w, html: prompt(`「${target(w)}」是第幾聲？`) + pic(w) + big(w.syms.join('')), speech: `${w.w}，${w.w}是第幾聲？`,
                choices, ans: w.tone, answerText: TONE_NAME[w.tone] };
     },
     // 7. 拼拼看（三拼音）
     spell(L, last) {
       const w = pickWord(L, last, w => w.syms.length === 3);
-      const others = shuffle(usableWords(L).filter(x => x.w !== w.w && x.e !== w.e)).slice(0, 3);
-      const choices = shuffle([w, ...others]).map(x => ({ html: `<span class="zq-emoji">${x.e}</span>`, value: x.w }));
+      const others = iconFirst(shuffle(usableWords(L).filter(x => x.w !== w.w && x.e !== w.e))).slice(0, 3);
+      const choices = shuffle([w, ...others]).map(x => ({ html: icon(x), value: x.w }));
       const parts = w.syms.join(' ＋ ') + (w.tone > 1 && w.tone < 5 ? ` ＋ ${TONE_MARK[w.tone]}` : '');
       return { word: w.w, html: prompt('三個符號拼起來，是什麼？') + big(parts), speech: '三個符號拼起來，是什麼？',
                choices, ans: w.w, answerText: `${w.e} ${w.w}` };

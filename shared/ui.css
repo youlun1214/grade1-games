@@ -1,0 +1,85 @@
+/* 共用 UI 樣式：依「小一打怪獸 遊戲設計總覽」（奧特曼特攝風、亮色光澤按鈕）
+   每個頁面都要載入：<link rel="stylesheet" href=".../shared/ui.css"> */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@700;900&display=swap');
+
+:root {
+  --ink: #1d2340;
+  --gold-1: #ffe066; --gold-2: #ffb21e; --gold-3: #e07b00;
+  --blue-1: #6fd0ff; --blue-2: #1e8cff; --blue-3: #0b4fc4;
+  --gray-1: #d9dde6; --gray-2: #8a93a8; --gray-3: #555e73;
+  --navy: rgba(16, 24, 56, .82);
+  --font: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+}
+
+/* 夜空星空背景（關卡地圖、排行榜用） */
+.bg-space {
+  background:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent 60%),
+    radial-gradient(1.5px 1.5px at 72% 12%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 35% 42%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 88% 48%, #fff, transparent 60%),
+    radial-gradient(1.5px 1.5px at 22% 78%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 60% 70%, #fff, transparent 60%),
+    radial-gradient(1px 1px at 50% 8%, #fff, transparent 60%),
+    radial-gradient(circle at 85% 8%, rgba(120,170,255,.35), transparent 30%),
+    radial-gradient(circle at 10% 95%, rgba(150,90,255,.35), transparent 35%),
+    linear-gradient(#0b1440, #1a2a6c 55%, #2a1a5a);
+  color: #fff;
+}
+
+/* 大標題字：金色、深色粗外框（像「小一打怪獸」logo） */
+.logo-text {
+  font-family: var(--font); font-weight: 900; line-height: 1.05; letter-spacing: .02em;
+  background: linear-gradient(#fff6b0 0%, var(--gold-1) 35%, var(--gold-2) 65%, var(--gold-3) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  /* 外框用四個方向的影子做，不會吃掉字的筆畫 */
+  --o: #3a1c00;
+  filter: drop-shadow(2px 0 0 var(--o)) drop-shadow(-2px 0 0 var(--o)) drop-shadow(0 2px 0 var(--o)) drop-shadow(0 -2px 0 var(--o))
+          drop-shadow(0 4px 0 var(--o)) drop-shadow(0 6px 8px rgba(0,0,0,.45));
+}
+.logo-text.purple { background: linear-gradient(#ffffff 0%, #e2d6ff 40%, #9a78ff 100%); -webkit-background-clip: text; background-clip: text; --o: #1d0b4a; }
+
+/* 光澤藥丸按鈕：金色／藍色／灰色 */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+  font-family: var(--font); font-weight: 900; font-size: 1.5rem; color: #fff; cursor: pointer;
+  padding: 12px 28px; border-radius: 999px; border: 3px solid rgba(255,255,255,.85);
+  text-shadow: 0 2px 0 rgba(0,0,0,.35); letter-spacing: .05em;
+  box-shadow: 0 5px 0 rgba(0,0,0,.35), inset 0 -6px 10px rgba(0,0,0,.15), inset 0 6px 8px rgba(255,255,255,.45);
+  transition: transform .08s;
+}
+.btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.35), inset 0 -6px 10px rgba(0,0,0,.15); }
+.btn-gold { background: linear-gradient(var(--gold-1), var(--gold-2) 55%, var(--gold-3)); color: #6a2e00; text-shadow: 0 1px 0 rgba(255,255,255,.6); }
+.btn-blue { background: linear-gradient(var(--blue-1), var(--blue-2) 55%, var(--blue-3)); }
+.btn-gray { background: linear-gradient(#eef0f5, var(--gray-2) 70%, var(--gray-3)); }
+.btn-orange { background: linear-gradient(#ffd27a, #ff9a1f 55%, #e05e00); }
+
+/* 圓形圖示按鈕（首頁、返回、聲音） */
+.ui-round {
+  width: 54px; height: 54px; border-radius: 50%; flex: none; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 1.55rem; color: #fff; line-height: 1;
+  background: radial-gradient(circle at 35% 30%, #9fe0ff, var(--blue-2) 55%, var(--blue-3));
+  border: 3px solid #fff; box-shadow: 0 4px 0 rgba(0,0,0,.35);
+}
+.ui-round:active { transform: translateY(2px); }
+
+/* 星星（亮／暗） */
+.ui-star { display: inline-block; filter: drop-shadow(0 2px 0 rgba(0,0,0,.35)); }
+.ui-star.off { filter: grayscale(1) brightness(1.4); opacity: .45; }
+
+/* ===== 國字旁的直排注音（shared/zhuyin.js 產生）=====
+   像課本一樣：國字右邊一條直排注音，聲調在注音右邊 */
+.zy { display:inline-flex; align-items:center; vertical-align:middle; white-space:nowrap; margin:0 .03em; }
+.zy-r { display:inline-flex; align-items:center; margin-left:.05em; font-size:max(.42em, 11px); line-height:1; font-weight:700; }
+.zy-p { writing-mode:vertical-rl; text-orientation:upright; letter-spacing:-.1em; }
+.zy-t { display:inline-block; min-width:.55em; margin-left:-.1em; font-size:1.05em; }
+.zy-t:empty { min-width:.3em; }
+.zy-wrap { display:inline; }
+
+/* ===== 題目圖示（shared/icons.js 產生）===== */
+.ic { width:1.25em; height:1.25em; object-fit:contain; vertical-align:middle; display:inline-block; }
+.ic.sm { width:1.6em; height:1.6em; }
+.ic.ch { width:2.2em; height:2.2em; }
+.ic.big { width:2.6em; height:2.6em; filter:drop-shadow(0 3px 3px rgba(0,0,0,.18)); }
+.ic-emoji { width:auto; height:auto; line-height:1; }

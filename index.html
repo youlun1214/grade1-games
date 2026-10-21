@@ -3,48 +3,106 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>小一遊戲樂園</title>
+<title>小一打怪獸</title>
+<link rel="stylesheet" href="shared/ui.css">
+<script src="shared/zhuyin.js"></script>
+<script src="shared/sound.js"></script>
+<script src="shared/music.js"></script>
 <style>
-  :root { --bg:#fff8e7; --card:#ffffff; --ink:#3b2f2f; --math:#ff8a5b; --zhuyin:#4fb3bf; --muted:#9a8f86; }
-  * { box-sizing:border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink);
-         font-family:"BpmfZihiKaiStd","Microsoft JhengHei","PingFang TC","Noto Sans TC",sans-serif; }
-  header { text-align:center; padding:32px 16px 8px; }
-  h1 { font-size:clamp(2rem,7vw,3.2rem); margin:0; }
-  header p { font-size:1.2rem; color:var(--muted); margin:8px 0 0; }
-  main { max-width:960px; margin:0 auto; padding:16px; display:grid; gap:24px;
-         grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
-  section { background:var(--card); border-radius:24px; padding:24px;
-            box-shadow:0 6px 0 rgba(0,0,0,.08); border-top:10px solid var(--c); }
-  section.math { --c:var(--math); } section.zhuyin { --c:var(--zhuyin); }
-  h2 { font-size:2rem; margin:0 0 16px; }
-  ul { list-style:none; margin:0; padding:0; display:grid; gap:12px; }
-  a.game { display:block; padding:18px 20px; border-radius:16px; background:var(--c);
-           color:#fff; font-size:1.4rem; font-weight:bold; text-decoration:none; }
-  a.game:active { transform:scale(.97); }
-  .empty { color:var(--muted); font-size:1.2rem; }
+  /* 依「小一打怪獸 遊戲設計總覽」01 開始畫面、02 遊戲模式選擇 */
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { margin:0; background:#141a3a; font-family:var(--font); color:#fff; user-select:none; }
+  .view { display:none; min-height:100dvh; max-width:780px; margin:0 auto; position:relative; overflow:hidden;
+          background-size:cover; background-position:center bottom; padding:14px 16px 24px; }
+  .view.on { display:flex; flex-direction:column; align-items:center; }
+  .bar { align-self:stretch; display:flex; justify-content:space-between; min-height:54px; }
+
+  /* 01 開始畫面 */
+  #title { background-image:linear-gradient(rgba(20,10,40,0) 40%, rgba(20,10,40,.55)), url('assets/backgrounds/scene-01.jpg'); justify-content:center; }
+  .hero-row { display:flex; align-items:flex-end; justify-content:center; width:100%; margin-top:auto; }
+  .hero { height:min(46vh, 460px); width:auto; margin-right:-30px; flex-shrink:1; min-width:0; object-fit:contain; filter:drop-shadow(0 8px 14px rgba(0,0,0,.5)); animation:float 3s ease-in-out infinite; }
+  .title-col { display:flex; flex-direction:column; align-items:center; gap:14px; padding-bottom:6vh; }
+  .logo { font-size:clamp(2.6rem,9vw,4.4rem); text-align:center; transform:rotate(-4deg); white-space:nowrap; }
+  .title-col .btn { width:min(62vw, 300px); font-size:clamp(1.4rem,5.5vw,1.9rem); }
+  .music-btn { position:fixed; top:14px; right:max(14px, calc(50% - 376px)); z-index:5; }
+  .more.voice { margin-top:6px; padding-top:0; font-size:1rem; }
+  .more { margin-top:auto; padding-top:16px; background:none; border:0; color:#fff; font-family:var(--font); font-size:1.1rem; font-weight:700;
+          text-shadow:0 2px 4px rgba(0,0,0,.7); text-decoration:underline; cursor:pointer; }
+  @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+  @media (max-width:520px) {
+    .hero-row { flex-direction:column; align-items:center; }
+    .hero { height:min(36vh, 320px); margin:0; }
+    .title-col { padding-bottom:0; }
+  }
+
+  /* 02 遊戲模式選擇 */
+  #modes h1 { font-size:clamp(2.4rem,10vw,3.6rem); margin:4px 0 18px; }
+  .cards { display:grid; grid-template-columns:1fr 1fr; gap:16px; width:100%; }
+  @media (max-width:520px) { .cards { grid-template-columns:1fr; } }
+  .card { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; text-decoration:none; color:#fff;
+          min-height:min(46vh, 380px); border-radius:26px; border:4px solid #fff; padding:18px 10px;
+          box-shadow:0 8px 0 rgba(0,0,0,.35), inset 0 -10px 20px rgba(0,0,0,.15), inset 0 10px 16px rgba(255,255,255,.35); }
+  .card:active { transform:translateY(4px); }
+  .card.zhuyin { background:linear-gradient(#ffd27a, #ff9a1f 55%, #e05e00); }
+  .card.math { background:linear-gradient(#8fdcff, #1e8cff 55%, #0b4fc4); }
+  .card .big { font-size:clamp(5rem,22vw,8rem); font-weight:900; line-height:1; color:#ff3b2a;
+               -webkit-text-stroke:4px #fff; paint-order:stroke fill; filter:drop-shadow(0 5px 0 rgba(0,0,0,.25)); }
+  .card.math .big { color:#fff; -webkit-text-stroke:4px #0b2a7a; }
+  .card .name { font-size:clamp(1.7rem,6.5vw,2.3rem); font-weight:900; text-shadow:0 3px 0 rgba(0,0,0,.3); }
+  .card .desc { font-size:1.1rem; font-weight:700; background:rgba(0,0,0,.2); padding:4px 14px; border-radius:999px; }
+  .others { width:100%; margin-top:20px; text-align:center; color:#cfd8f0; }
+  .others a { color:#ffe066; font-weight:700; }
 </style>
 </head>
 <body>
-<header>
-  <h1>🎈 小一遊戲樂園</h1>
-  <p>一起玩數學、學注音！</p>
-</header>
-<main>
-  <section class="math">
-    <h2>🔢 數學</h2>
-    <ul>
-      <!-- 新遊戲加在這裡：<li><a class="game" href="tools/math-xxx/">遊戲名</a></li> -->
-      <li><a class="game" href="tools/math-add-within-10/">🍎 10 以內加減</a></li>
-    </ul>
-  </section>
-  <section class="zhuyin">
-    <h2>ㄅㄆㄇ 注音</h2>
-    <ul>
-      <!-- 新遊戲加在這裡：<li><a class="game" href="tools/zhuyin-xxx/">遊戲名</a></li> -->
-      <li><a class="game" href="tools/zhuyin-battle/">ㄅ 注音打怪獸（10 關）</a></li>
-    </ul>
-  </section>
-</main>
+
+<!-- 背景音樂開關 -->
+<button class="ui-round music-btn" data-music-toggle aria-label="背景音樂">🎵</button>
+
+<!-- 01 開始畫面 -->
+<section class="view on" id="title">
+  <div class="hero-row">
+    <img class="hero" src="assets/player/player-pose.png" alt="" onerror="this.remove()">
+    <div class="title-col">
+      <div class="logo-text logo">小一<br>打怪獸</div>
+      <a class="btn btn-orange" href="tools/zhuyin-battle/">注音打怪獸</a>
+      <a class="btn btn-blue" href="tools/math-battle/">數學打怪獸</a>
+    </div>
+  </div>
+  <button class="more" data-go="modes">看全部遊戲 ▸</button>
+  <button class="more voice" onclick="Sound.openPicker()">🔊 聲音設定</button>
+</section>
+
+<!-- 02 遊戲模式選擇 -->
+<section class="view bg-space" id="modes">
+  <div class="bar"><button class="ui-round" data-go="title" aria-label="返回">←</button></div>
+  <div class="logo-text" style="font-size:clamp(2.4rem,10vw,3.6rem);margin:4px 0 18px">選擇遊戲</div>
+  <div class="cards">
+    <!-- 新遊戲加在這裡 -->
+    <a class="card zhuyin" href="tools/zhuyin-battle/">
+      <span class="big">ㄅ</span>
+      <span class="name">注音打怪獸</span>
+      <span class="desc">練習注音符號・10 關</span>
+    </a>
+    <a class="card math" href="tools/math-battle/">
+      <span class="big">1+2</span>
+      <span class="name">數學打怪獸</span>
+      <span class="desc">翰林一上・10 關</span>
+    </a>
+  </div>
+  <div class="others">📝 單元練習：<a href="tools/math-add-within-10/">🍎 10 以內加減（不計時練習）</a></div>
+</section>
+
+<script>
+  document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
+    document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === b.dataset.go));
+    window.scrollTo(0, 0);
+  });
+  // 首頁的背景音樂（點過畫面後才會開始，這是瀏覽器的規定）
+  Music.play('title');
+  // 只有大標題加注音（按鈕、說明文字不加，畫面才不會太亂）
+  document.querySelectorAll('.logo-text').forEach(el => Zhuyin.apply(el));
+</script>
 </body>
 </html>
