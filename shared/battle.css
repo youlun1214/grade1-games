@@ -119,6 +119,9 @@
 .bt-story-hero { left:2%; height:min(45vh, 460px); animation:bt-in-left .6s ease-out both; }
 .bt-story-mon { right:2%; height:min(42vh, 430px); animation:bt-in-right .6s ease-out both; }
 .bt-story-hero img, .bt-story-mon img { height:100%; width:auto; filter:drop-shadow(0 6px 10px rgba(0,0,0,.45)); }
+/* 手機直立畫面窄：英雄、怪獸各佔一半寬，圖片等比例縮小，不會疊在一起 */
+.bt-story-hero, .bt-story-mon { max-width:48%; }
+.bt-story-hero img, .bt-story-mon img { max-width:100%; object-fit:contain; object-position:bottom; }
 .bt-story-hero span, .bt-story-mon span { font-size:min(22vh, 180px); line-height:1; }
 .bt-go { position:absolute; left:50%; bottom:4%; transform:translateX(-50%); font-size:clamp(1.5rem,6vw,2rem); padding:14px 48px; white-space:nowrap; }
 .bt-go:active { transform:translate(-50%, 3px); }
