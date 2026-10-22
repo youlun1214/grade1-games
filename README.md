@@ -9,6 +9,7 @@
 - `tools/<遊戲名>/`：每個遊戲一個子資料夾（數學 `math-*`、注音 `zhuyin-*`）
 - `shared/`：共用程式（打怪獸對戰引擎、音效）
 - `assets/`：共用圖片（怪獸、玩家角色、背景）
+- `parent/`：家長專區（答錯清單，Firebase 設定見 `docs/firebase-setup.md`）
 - `docs/battle-rules.md`：對戰規則與關卡難度
 - `docs/curriculum-grade1.md`：小一上課程範圍（國語康軒、數學翰林）與題型
 

@@ -137,7 +137,7 @@
             <p class="lv-sub no-zy">${o.subtitle || ''}</p>
           </div>
         </div>
-        <button class="lv-voice no-zy" type="button" data-act="voice">🔊 聲音設定</button>
+        <div class="lv-tools no-zy"><button class="lv-voice" type="button" data-act="voice">🔊 聲音設定</button><span class="lv-cloud" data-cloud></span></div>
         <form class="lv-namebox">
           <label for="lv-name">你的名字是？</label>
           <input id="lv-name" maxlength="10" autocomplete="off" placeholder="中文、英文都可以">
@@ -165,6 +165,7 @@
     el.querySelectorAll('.lv-player').forEach(b => b.onclick = () => { setCurrent(o.gameId, b.dataset.name); o.onStart(b.dataset.name); });
     el.querySelector('[data-act="board"]').onclick = o.onBoard;
     el.querySelector('[data-act="voice"]').onclick = () => window.Sound && Sound.openPicker();
+    cloudBar(el.querySelector('[data-cloud]'));
   }
 
   /**
@@ -201,15 +202,28 @@
           <div class="lv-turn">⤵</div>
           <div class="lv-row">${o.levels.slice(half).map((lv, i) => node(lv, i + half)).join('<span class="lv-arrow">➜</span>')}</div>
         </div>
+        ${o.onReview ? `<button class="btn btn-orange lv-review" data-act="review">📝 錯題複習 <span data-review-n></span></button>` : ''}
+        <div class="lv-tools"><span class="lv-cloud" data-cloud></span></div>
         <button class="lv-unlock" data-act="unlock">家長：幫 <span class="no-zy">${esc(p.name)}</span> 解鎖全部關卡</button>
       </div>`;
     zy(el.querySelector('.lv-ribbon'));
     window.Music && Music.play('map');
+    cloudBar(el.querySelector('[data-cloud]'));
+    // 錯題複習按鈕上顯示還有幾題要複習
+    const nEl = el.querySelector('[data-review-n]');
+    const showCount = () => {
+      if (!nEl || !nEl.isConnected) return;
+      if (!window.Cloud) return setTimeout(showCount, 200);
+      Cloud.onChange(() => Cloud.list({ game: o.gameId, player: o.name, includeResolved: false })
+        .then(list => { nEl.textContent = list.length ? `（${list.length} 題）` : '（沒有錯題）'; }).catch(() => {}));
+    };
+    showCount();
     el.onclick = e => {
       const n = e.target.closest('.lv-node');
       if (n && !n.disabled) return o.onPick(+n.dataset.i);
       const act = e.target.closest('[data-act]')?.dataset.act;
       if (act === 'switch') o.onSwitch();
+      else if (act === 'review') o.onReview();
       else if (act === 'board') o.onBoard();
       else if (act === 'unlock' && confirm(`要幫 ${p.name} 解鎖全部 ${total} 關嗎？`)) {
         const pp = getPlayer(o.gameId, o.name); pp.unlocked = total; savePlayer(o.gameId, pp);
@@ -233,6 +247,65 @@
     el.querySelector('[data-act="back"]').onclick = o.onBack;
   }
 
-  window.Levels = { MONSTERS, TIMING, SCENES, scene, monster, player, current, setCurrent, getPlayer, recordResult, ranking, boardHtml,
+  // ===== 雲端答錯紀錄（shared/cloud.js）=====
+  // 顯示「家長登入」或「已連線」
+  function cloudBar(span) {
+    if (!span) return;
+    // cloud.js 是模組，會比畫面晚一點載入：還沒好就等一下再畫
+    if (!window.Cloud) { setTimeout(() => span.isConnected && cloudBar(span), 200); return; }
+    Cloud.onChange(st => {
+      if (!st.configured) { span.innerHTML = `<span class="lv-cloud-off">☁️ 答錯紀錄先存在這台裝置</span>`; return; }
+      if (st.user) {
+        span.innerHTML = `☁️ 已連線雲端（${esc(st.user.email || '')}）<button class="lv-link" data-cloud-act="out">登出</button>`;
+      } else {
+        const n = Cloud.pending();
+        span.innerHTML = `<button class="lv-voice" data-cloud-act="in">☁️ 家長登入</button>${n ? `<small>有 ${n} 筆答錯紀錄等著上傳</small>` : ''}`;
+      }
+      span.querySelector('[data-cloud-act="in"]') && (span.querySelector('[data-cloud-act="in"]').onclick = e => { e.stopPropagation(); Cloud.signIn(); });
+      span.querySelector('[data-cloud-act="out"]') && (span.querySelector('[data-cloud-act="out"]').onclick = e => { e.stopPropagation(); if (confirm('要登出嗎？之後的答錯紀錄會先存在這台裝置。')) Cloud.signOut(); });
+    });
+  }
+
+  // 答錯一題時記下來（itemKey：同一題用同一個代號，錯很多次會累加）
+  function recordWrong(game, player, levelNo, q, chosen, chosenText, itemKey) {
+    if (!window.Cloud) return;
+    const keep = { html: q.html, choices: q.choices, ans: q.ans, speech: q.speech, answerText: q.answerText, type: q.type };
+    Cloud.recordMistake({ game, player, level: levelNo, type: q.type, itemKey, q: keep, chosen: String(chosen), chosenText }).catch(() => {});
+  }
+
+  /**
+   * 錯題複習：只出這位玩家答錯過、還沒學會的題目，連續答對 2 次就算學會
+   * o.game, o.player, o.root, o.base, o.moves, o.speech(q), o.answerText(q), o.onExit()
+   */
+  async function startReview(o) {
+    if (!window.Cloud) { alert('雲端紀錄還沒載入，請稍等一下再試。'); return false; }
+    const items = await Cloud.list({ game: o.game, player: o.player, includeResolved: false });
+    if (!items.length) { alert('太棒了！目前沒有要複習的題目 🎉'); return false; }
+    let order = [], last = null;
+    const nextItem = () => {
+      if (!order.length) order = items.filter(m => !m.resolved).sort(() => Math.random() - .5);
+      if (!order.length) order = items.slice();
+      let m = order.shift();
+      if (m === last && order.length) { order.push(m); m = order.shift(); }
+      return (last = m);
+    };
+    const i = Math.floor(Math.random() * MONSTERS.length);
+    Battle.start({
+      root: o.root,
+      level: { no: 0, label: '錯題複習', title: `${items.length} 題`, monster: monster(i, o.base),
+               rules: { monsterHp: Math.max(40, Math.min(100, items.length * 20)), firstAttackAt: 12 } },
+      player: player(o.base, o.moves, o.player, getPlayer(o.game, o.player).best + 1),
+      nextQuestion: () => { const m = nextItem(); return Object.assign({}, m.q, { _item: m, key: m.id, word: m.id }); },
+      renderQuestion: (q, el) => { el.innerHTML = q.html; },
+      speech: o.speech, answerText: o.answerText,
+      background: scene(i, o.base),
+      onCorrect: q => Cloud.recordReviewCorrect(q._item).catch(() => {}),
+      onWrong: (q, v, t) => Cloud.recordReviewWrong(q._item, String(v), t).catch(() => {}),
+      onExit: o.onExit, exitLabel: '回關卡地圖',
+    });
+    return true;
+  }
+
+  window.Levels = { recordWrong, startReview, cloudBar, MONSTERS, TIMING, SCENES, scene, monster, player, current, setCurrent, getPlayer, recordResult, ranking, boardHtml,
                     renderStart, renderMap, renderBoard, totalStars };
 })();

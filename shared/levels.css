@@ -76,3 +76,11 @@
 .bt-over .lb td { font-size:1rem; padding:4px; }
 .bt-over .lb-title { font-size:1.15rem; font-weight:900; margin-top:12px; }
 .bt-over.win .lb-title { color:#4a1d00; }
+
+/* 雲端答錯紀錄、錯題複習 */
+.lv-tools { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin-top:10px; }
+.lv-cloud { display:inline-flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:6px; color:#fff; font-weight:700; font-size:1rem; text-shadow:0 2px 4px rgba(0,0,0,.6); }
+.lv-cloud small { font-size:.85rem; opacity:.9; }
+.lv-cloud .lv-link { color:#cfe0ff; font-size:.95rem; text-decoration:underline; }
+.lv-cloud-off { opacity:.8; font-size:.9rem; }
+.lv-review { margin-top:14px; font-size:1.4rem; }

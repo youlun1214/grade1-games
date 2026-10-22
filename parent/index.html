@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>家長專區・答錯清單</title>
+<link rel="stylesheet" href="../shared/ui.css">
+<script src="../shared/icons.js"></script>
+<script src="../shared/firebase-config.js"></script>
+<script type="module" src="../shared/cloud.js"></script>
+<style>
+  /* 家長專區：看每位玩家答錯的題目，標記已學會 */
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:var(--font); background:#eef3fb; color:#1d2340; }
+  header { background:#1d2340; color:#fff; padding:14px 16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  header h1 { font-size:1.4rem; margin:0; flex:1; }
+  header a { color:#cfe0ff; }
+  main { max-width:900px; margin:0 auto; padding:16px; }
+  .card { background:#fff; border-radius:16px; padding:14px 16px; box-shadow:0 3px 0 rgba(0,0,0,.08); margin-bottom:12px; }
+  .row { display:flex; flex-wrap:wrap; gap:10px; align-items:center; }
+  select, .tab { font-family:inherit; font-size:1.05rem; padding:8px 12px; border-radius:12px; border:2px solid #c9d6ea; background:#fff; color:#1d2340; }
+  .tab { cursor:pointer; font-weight:700; }
+  .tab.on { background:#1e8cff; color:#fff; border-color:#1e8cff; }
+  .note { color:#5a6890; font-size:.95rem; }
+  .summary { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .chip { background:#fff4d6; border-radius:999px; padding:4px 12px; font-weight:700; font-size:.95rem; }
+  .item { display:grid; grid-template-columns:1fr auto; gap:6px 14px; }
+  .item.done { opacity:.55; }
+  .qbox { border:2px dashed #d6e2f2; border-radius:12px; padding:8px 10px; text-align:center; }
+  .qbox .ic { width:52px; height:52px; } .qbox .zq-pic .ic, .qbox .mq-center .ic { width:64px; height:64px; }
+  .qbox .mq-pile .ic, .qbox .mq-row .ic { width:30px; height:30px; }
+  .qbox .zq-prompt, .qbox .mq-prompt { font-weight:900; font-size:1.15rem; }
+  .qbox .zq-zy, .qbox .mq-big { font-weight:900; font-size:1.7rem; }
+  .qbox .zq-word { color:#8a93a8; }
+  .qbox .zq-blank, .qbox .q { color:#e8443a; }
+  .qbox .mq-bars { display:flex; flex-direction:column; gap:4px; align-items:flex-start; width:220px; margin:4px auto; }
+  .qbox .mq-bar { height:12px; width:calc(var(--w) * 10%); background:var(--c); border:2px solid #1d2340; border-radius:4px; display:flex; }
+  .qbox .mq-dots, .qbox .mq-dotline { color:#2f7de1; }
+  .qbox .mq-two { display:flex; flex-direction:column; gap:2px; align-items:center; } .qbox .mq-two.row { flex-direction:row; }
+  .qbox .mq-ten, .qbox .mq-ones { display:inline-flex; gap:2px; padding:2px; } .qbox .mq-ten { border:2px solid #e8443a; }
+  .qbox .mq-ten b, .qbox .mq-ones b { width:4px; height:28px; background:#f0a800; }
+  .qbox .mq-split, .qbox .mq-parts { display:inline-flex; gap:8px; font-weight:900; font-size:1.3rem; }
+  .qbox .mq-frame { display:grid; grid-template-columns:repeat(5, 16px); gap:3px; justify-content:center; }
+  .qbox .mq-frame b { width:16px; height:16px; border-radius:50%; border:2px solid #1d2340; } .qbox .mq-frame b.on { background:#e8443a; }
+  .qbox .mq-five i.gone { opacity:.35; }
+  .meta { display:flex; flex-direction:column; gap:4px; min-width:170px; }
+  .meta b { color:#2f9a3a; } .meta .bad { color:#d33; }
+  .count { font-size:1.3rem; font-weight:900; color:#d33; }
+  .acts { display:flex; gap:6px; margin-top:4px; }
+  .acts button { font-family:inherit; border:0; border-radius:999px; padding:6px 12px; font-weight:700; cursor:pointer; }
+  .acts .ok { background:#2fc23a; color:#fff; } .acts .undo { background:#dff1ff; } .acts .del { background:#ffe2e2; color:#a11; }
+  .empty { text-align:center; padding:30px; color:#5a6890; }
+  @media (max-width:560px) { .item { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>👨‍👩‍👦 家長專區・答錯清單</h1>
+  <span id="who"></span>
+  <a href="../">回遊戲首頁</a>
+</header>
+<main>
+  <div class="card" id="login" hidden>
+    <p>用家長的 Google 帳號登入，就能看到每位玩家答錯的題目（任何裝置登入同一個帳號都看得到）。</p>
+    <button class="btn btn-blue" id="signin">☁️ 用 Google 帳號登入</button>
+    <p class="note" id="cfg"></p>
+  </div>
+  <div id="app" hidden>
+    <div class="card">
+      <div class="row">
+        <button class="tab on" data-game="zhuyin-battle">ㄅ 注音打怪獸</button>
+        <button class="tab" data-game="math-battle">🔢 數學打怪獸</button>
+        <select id="player"><option value="">全部玩家</option></select>
+        <label><input type="checkbox" id="showDone"> 也顯示已學會的</label>
+      </div>
+      <div class="summary" id="summary"></div>
+      <p class="note">孩子在「📝 錯題複習」同一題連續答對 2 次，就會自動標成已學會。</p>
+    </div>
+    <div id="list"></div>
+  </div>
+</main>
+
+<script type="module">
+const TYPE = {
+  hunt: '聽音找圖', first: '看圖找第一個音', pic2zy: '看圖選注音', zy2pic: '看注音選圖', missing: '缺了哪個符號', tone: '第幾聲', spell: '三拼音',
+  count: '數數量', pickAmount: '數量配數字', numWord: '國字數字', longest: '比長短', unitLength: '幾格長', ordinal: '第幾個', more: '比多少',
+  nextNum: '前後數', split: '分與合（分）', combine: '分與合（合）', make10: '湊 10', whichShape: '認形狀', thingShape: '像什麼形狀', corners: '幾個角',
+  addPic: '加法（看圖）', addStory: '加法應用題', subPic: '減法（看圖）', subStory: '減法應用題', missing2: '算式填空', compareDiff: '多幾個／少幾個',
+  mixed: '加減混合', tensOnes: '十和一', bigger: '比大小', next30: '30 以內前後數',
+};
+const $ = id => document.getElementById(id);
+let game = 'zhuyin-battle', all = [];
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const day = t => t ? new Date(t).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+
+async function waitCloud() { while (!window.Cloud) await new Promise(r => setTimeout(r, 50)); }
+await waitCloud();
+
+Cloud.onChange(st => {
+  const loggedIn = !!st.user;
+  $('login').hidden = loggedIn; $('app').hidden = !loggedIn && !Cloud.pending();
+  $('who').innerHTML = loggedIn ? `${esc(st.user.email)} <button class="tab" id="out">登出</button>` : '';
+  if (loggedIn) $('out').onclick = () => Cloud.signOut();
+  $('cfg').textContent = !st.configured ? '⚠️ Firebase 還沒設定好，目前只能看這台裝置上的紀錄（設定方法：docs/firebase-setup.md）。'
+    : st.error ? '⚠️ ' + st.error : '';
+  if (loggedIn || Cloud.pending()) { $('app').hidden = false; load(); }
+});
+$('signin').onclick = () => Cloud.signIn();
+document.querySelectorAll('.tab[data-game]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.tab[data-game]').forEach(x => x.classList.toggle('on', x === b));
+  game = b.dataset.game; $('player').value = ''; load();
+});
+$('player').onchange = render; $('showDone').onchange = render;
+
+async function load() {
+  $('list').innerHTML = '<div class="card empty">讀取中…</div>';
+  try { all = await Cloud.list({ game }); } catch (e) { $('list').innerHTML = `<div class="card empty">讀不到資料：${esc(e.message || e)}</div>`; return; }
+  const players = [...new Set(all.map(m => m.player))].sort();
+  const cur = $('player').value;
+  $('player').innerHTML = '<option value="">全部玩家</option>' + players.map(p => `<option ${p === cur ? 'selected' : ''}>${esc(p)}</option>`).join('');
+  render();
+}
+
+function render() {
+  const p = $('player').value, showDone = $('showDone').checked;
+  const list = all.filter(m => (!p || m.player === p) && (showDone || !m.resolved));
+  // 題型統計：哪一種題目最常錯
+  const byType = {};
+  all.filter(m => (!p || m.player === p) && !m.resolved).forEach(m => { byType[m.type] = (byType[m.type] || 0) + (m.count || 1); });
+  $('summary').innerHTML = Object.entries(byType).sort((a, b) => b[1] - a[1])
+    .map(([t, n]) => `<span class="chip">${esc(TYPE[t] || t)}：錯 ${n} 次</span>`).join('') || '<span class="note">目前沒有要複習的題目 🎉</span>';
+  if (!list.length) { $('list').innerHTML = '<div class="card empty">這裡還沒有答錯的紀錄 👍</div>'; return; }
+  $('list').innerHTML = list.map(m => `
+    <div class="card item${m.resolved ? ' done' : ''}" data-id="${esc(m.id)}">
+      <div class="qbox">${m.q && m.q.html || ''}</div>
+      <div class="meta">
+        <span class="count">錯 ${m.count || 1} 次</span>
+        <span>玩家：${esc(m.player)}・第 ${esc(m.level)} 關・${esc(TYPE[m.type] || m.type)}</span>
+        <span>正確答案：<b>${esc(m.q && m.q.answerText || m.q && m.q.ans)}</b></span>
+        <span>孩子選了：<span class="bad">${esc(m.chosenText || m.chosen)}</span></span>
+        <span class="note">最近答錯：${day(m.lastWrong)}${m.resolved ? '・✅ 已學會' : m.streak ? `・複習已連續答對 ${m.streak} 次` : ''}</span>
+        ${Cloud.state.user ? `<div class="acts">${m.resolved ? '<button class="undo" data-a="undo">再複習</button>' : '<button class="ok" data-a="ok">✓ 已學會</button>'}<button class="del" data-a="del">刪除</button></div>` : ''}
+      </div>
+    </div>`).join('');
+}
+
+$('list').onclick = async e => {
+  const b = e.target.closest('[data-a]'); if (!b) return;
+  const id = b.closest('[data-id]').dataset.id;
+  if (b.dataset.a === 'ok') await Cloud.setResolved(id, true);
+  else if (b.dataset.a === 'undo') await Cloud.setResolved(id, false);
+  else if (b.dataset.a === 'del' && confirm('確定要刪除這筆紀錄嗎？')) await Cloud.remove(id);
+  load();
+};
+</script>
+</body>
+</html>

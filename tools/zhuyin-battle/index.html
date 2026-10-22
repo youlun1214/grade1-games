@@ -13,6 +13,8 @@
 <script src="../../shared/icons.js"></script>
 <script src="../../shared/battle.js"></script>
 <script src="../../shared/levels.js"></script>
+<script src="../../shared/firebase-config.js"></script>
+<script type="module" src="../../shared/cloud.js"></script>
 <script src="bank.js"></script>
 <style>
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -81,6 +83,14 @@ function showMap() {
     gameId: GAME_ID, name: playerName, base: BASE, levels: LEVELS, title: TITLE,
     onPick: startLevel,
     onSwitch: showStart,
+    // 錯題複習：只出這位玩家答錯過的題目
+    onReview: () => {
+      show('battle');
+      Levels.startReview({
+        game: GAME_ID, player: playerName, root: $('battle'), base: BASE, moves: ['注音光線', '拼音飛踢', '聲調光波', '火焰拳', '光之斬擊'],
+        speech: q => q.speech, answerText: q => q.answerText, onExit: showMap,
+      }).then(ok => { if (!ok) showMap(); });
+    },
     onBoard: () => showBoard('map'),
   });
 }
@@ -109,6 +119,8 @@ function startLevel(i) {
     isLast: i === LEVELS.length - 1,
     // 每場打完都記錄，結算畫面附上排行榜
     onEnd: r => Levels.recordResult(GAME_ID, playerName, i + 1, r, LEVELS.length),
+    // 答錯就記到答錯清單（家長專區可以看，錯題複習會再出）
+    onWrong: (q, chosen, chosenText) => Levels.recordWrong(GAME_ID, playerName, i + 1, q, chosen, chosenText, `${q.type}:${q.word}`),
     overExtra: () => `<div class="lb-title">🏆 排行榜</div>${Levels.boardHtml(GAME_ID, playerName, 5)}`,
     onNext: () => startLevel(i + 1),
     onExit: showMap,

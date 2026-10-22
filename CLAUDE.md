@@ -34,9 +34,12 @@
 - 兒子的真實照片只放 `assets/_private/`（已 gitignore，不上 GitHub）；遊戲裡只用 AI 畫的卡通版角色
 - 對戰模式規則（血量、攻擊力、怪獸反擊）見 `docs/battle-rules.md`
 - 畫面依 ChatGPT 產的〈小一打怪獸 遊戲設計總覽〉（原圖在 `assets/_source/`，不上傳）：首頁開始畫面＋選擇遊戲、選擇關卡地圖、關卡故事對話、戰鬥、過關、失敗；共用按鈕／標題字／星空背景在 `shared/ui.css`
-- 共用程式放 `shared/`：`battle.js`＋`battle.css`（打怪獸引擎：故事對話→戰鬥→過關／失敗，數字都在 `RULES`）、`levels.js`＋`levels.css`（10 隻怪獸、10 個關卡場景 `SCENES`、英雄 12 式動作、每關血量與秒數 `TIMING`、輸入名字的開始畫面、每位玩家的挑戰紀錄、關卡地圖、排行榜；紀錄存在這台裝置的瀏覽器）、`sound.js`（音效＋語音；自動挑裝置上最像真人的中文聲音，開始畫面與首頁有「🔊 聲音設定」可試聽、選擇；之後想改成家長自己的聲音，做法記在 Obsidian 工作筆記）、`music.js`（原創 8 位元背景音樂，程式即時合成：首頁 title、地圖 map、戰鬥 battle／battle2、魔王 boss、過關 win、失敗 lose；畫面上的 🎵 按鈕可開關，設定記在裝置上）、`zhuyin.js`（國字旁自動標直排注音，台灣課本讀音；`class="no-zy"` 的字不標，例如要考的字）、`icons.js`（題目圖示對照表，圖在 `assets/icons/`）。新遊戲要對戰時呼叫 `Battle.start()`，只需提供出題、畫題目、唸題目三個函式
+- 共用程式放 `shared/`：`battle.js`＋`battle.css`（打怪獸引擎：故事對話→戰鬥→過關／失敗，數字都在 `RULES`）、`levels.js`＋`levels.css`（10 隻怪獸、10 個關卡場景 `SCENES`、英雄 12 式動作、每關血量與秒數 `TIMING`、輸入名字的開始畫面、每位玩家的挑戰紀錄、關卡地圖、排行榜；紀錄存在這台裝置的瀏覽器）、`sound.js`（音效＋語音；自動挑裝置上最像真人的中文聲音，開始畫面與首頁有「🔊 聲音設定」可試聽、選擇；之後想改成家長自己的聲音，做法記在 Obsidian 工作筆記）、`music.js`（原創 8 位元背景音樂，程式即時合成：首頁 title、地圖 map、戰鬥 battle／battle2、魔王 boss、過關 win、失敗 lose；畫面上的 🎵 按鈕可開關，設定記在裝置上）、`zhuyin.js`（國字旁自動標直排注音，台灣課本讀音；`class="no-zy"` 的字不標，例如要考的字）、`icons.js`（題目圖示對照表，圖在 `assets/icons/`）、`cloud.js`＋`firebase-config.js`（答錯清單存到 Firebase：家長 Google 登入後存在 `users/{uid}/mistakes/`，安全規則只讓本人讀寫，見 `docs/firebase-setup.md`、`firestore.rules`；沒登入時先存在裝置、登入後自動上傳）。新遊戲要對戰時呼叫 `Battle.start()`，只需提供出題、畫題目、唸題目三個函式
 - 兒子學校用書：國語康軒、數學**翰林**。課程範圍與題型設計依 `docs/curriculum-grade1.md`（學校 115 學年度進度總表；學校名稱與連結只記在 Obsidian 的〈學校課程進度（私人）〉，不寫進 repo）
 - 圖片沒放時自動用 emoji 暫代；檔名照 `assets/README.md` 放進去就會自動換上
+
+## 家長專區
+- [👨‍👩‍👦 家長專區](parent/)：看每位玩家答錯的題目（題目、正確答案、孩子選了什麼、錯幾次、哪種題型最常錯），可標記已學會；遊戲關卡地圖的「📝 錯題複習」只出答錯過的題，連續答對 2 次算學會
 
 ## 遊戲清單
 （之後加新遊戲時會自動更新，首頁 `index.html` 與 `README.md` 也要同步）

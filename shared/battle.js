@@ -67,6 +67,8 @@
    * opts.hasNext         有沒有下一關
    * opts.isLast          是不是最後一關（過關時顯示「全部破關」）
    * opts.onWin(result)   過關時呼叫（result = { stars, hp }）
+   * opts.onCorrect(q)    答對一題時呼叫（錯題複習用）
+   * opts.onWrong(q, 選的值, 選項文字)  答錯一題時呼叫（記到答錯清單）
    * opts.onEnd(result)   一場打完（輸贏都算）時呼叫，result = { won, stars, hp, correct, crit, wrong, score }
    * opts.overExtra(result)  結算畫面要多顯示的 HTML（例如排行榜）
    * opts.onNext()        按「下一關」
@@ -79,17 +81,19 @@
     const R = Object.assign({}, RULES, level.rules || {});
     const mon = level.monster;
     const ply = opts.player;
+    // 關卡名稱：一般是「第 N 關」，錯題複習等特殊關卡可以用 level.label 自訂
+    const levelName = level.label || `第 ${level.no} 關`;
 
     root.innerHTML = `
       <div class="bt">
         <div class="bt-field">
           <div class="bt-hud">
             <span class="bt-hud-l"><button class="ui-round" data-act="quit" aria-label="回關卡地圖">⌂</button><button class="ui-round" data-music-toggle aria-label="背景音樂">🎵</button></span>
-            <div class="bt-round">第 ${level.no} 關${level.title ? '・' + esc(level.title) : ''}</div>
+            <div class="bt-round">${esc(levelName)}${level.title ? '・' + esc(level.title) : ''}</div>
             <button class="ui-round" data-act="speak" aria-label="唸題目">🔊</button>
           </div>
           <div class="bt-info bt-info-m">
-            <div class="bt-info-name"><span>${esc(mon.name)}</span><span class="bt-lv">Lv.${level.no}</span></div>
+            <div class="bt-info-name"><span>${esc(mon.name)}</span>${level.no ? `<span class="bt-lv">Lv.${level.no}</span>` : ''}</div>
             <div class="bt-hp"><b>HP</b><div class="bt-bar"><div class="bt-fill" data-hp="m"></div></div></div>
             <div class="bt-charge"><div></div></div>
           </div>
@@ -164,12 +168,12 @@
     function showStory() {
       state = 'story';
       storyEl.innerHTML = `
-        <div class="bt-bubble"><b>第 ${level.no} 關　${esc(mon.name)} 出現了！</b><br>用你的智慧打敗牠吧！</div>
+        <div class="bt-bubble"><b>${esc(levelName)}　${esc(mon.name)} 出現了！</b><br>用你的智慧打敗牠吧！</div>
         <div class="bt-story-hero">${imgOr(ply, ['pose', 'idle'])}</div>
         <div class="bt-story-mon">${imgOr(mon, ['idle'])}</div>
         <button class="btn btn-gold bt-go" data-act="go">開始戰鬥</button>`;
       storyEl.classList.add('on');
-      Sound.say(`第 ${level.no} 關，${mon.name}出現了！用你的智慧打敗牠吧！`);
+      Sound.say(`${levelName}，${mon.name}出現了！用你的智慧打敗牠吧！`);
     }
 
     // 開場：畫面閃一下，雙方滑進來
@@ -287,6 +291,7 @@
       if (String(value) === String(q.ans)) {
         const tier = R.attackTiers.find(t => elapsed <= t.within);
         stats.correct++; if (tier.crit) stats.crit++;
+        opts.onCorrect && opts.onCorrect(q);
         btn.classList.add('right');
         const move = pickOne(ply.moves || ['衝撞']);
         log(tier.crit ? `你使出了 ${move}！⚡ 暴擊！` : `你使出了 ${move}！${pickOne(CHEERS)}`, 'good');
@@ -308,6 +313,8 @@
       } else {
         // 答錯：顯示正確答案，怪獸蓄力後攻擊，再換新題目
         stats.wrong++;
+        // 通知遊戲：記到答錯清單（choice 是孩子選的那個選項）
+        opts.onWrong && opts.onWrong(q, value, choiceText(btn));
         btn.classList.add('wrong');
         if (rightBtn) rightBtn.classList.add('right');
         const ansText = opts.answerText ? opts.answerText(q) : String(q.ans);
@@ -370,6 +377,13 @@
 
     function heroImg(stateName) {
       return `<div class="bt-over-hero">${imgOr(ply, [stateName, 'idle'])}</div>`;
+    }
+
+    // 選項上看得到的文字（去掉旁邊的注音；只有圖片時用圖片名稱）
+    function choiceText(btn) {
+      const c = btn.cloneNode(true);
+      c.querySelectorAll('.zy-r').forEach(e => e.remove());
+      return c.textContent.replace(/\s+/g, ' ').trim() || [...c.querySelectorAll('img')].map(i => i.alt).join('、');
     }
 
     // 直接放圖片；圖片不存在時換成 emoji
