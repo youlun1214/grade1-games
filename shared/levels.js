@@ -28,7 +28,7 @@
   ];
 
   // 國字旁邊加注音（有載入 shared/zhuyin.js 才會加）
-  // 只加在：輸入名字的畫面（整頁）、關卡地圖和排行榜的大標題
+  // 只加在：輸入名字的畫面（大標題、名字欄、開始按鈕、玩家清單；副標題和聲音設定不加）、關卡地圖和排行榜的大標題
   const zy = el => { if (window.Zhuyin && el) window.Zhuyin.apply(el); };
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const MEDALS = ['🥇', '🥈', '🥉'];
@@ -134,10 +134,10 @@
           <img class="lv-hero" src="${o.base}assets/player/player-pose.png" alt="" onerror="this.remove()">
           <div class="lv-titles">
             <div class="logo-text lv-logo">${o.title}</div>
-            <p class="lv-sub">${o.subtitle || ''}</p>
+            <p class="lv-sub no-zy">${o.subtitle || ''}</p>
           </div>
         </div>
-        <button class="lv-voice" type="button" data-act="voice">🔊 聲音設定</button>
+        <button class="lv-voice no-zy" type="button" data-act="voice">🔊 聲音設定</button>
         <form class="lv-namebox">
           <label for="lv-name">你的名字是？</label>
           <input id="lv-name" maxlength="10" autocomplete="off" placeholder="中文、英文都可以">
