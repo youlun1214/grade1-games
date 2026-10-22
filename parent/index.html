@@ -49,6 +49,9 @@
   .acts { display:flex; gap:6px; margin-top:4px; }
   .acts button { font-family:inherit; border:0; border-radius:999px; padding:6px 12px; font-weight:700; cursor:pointer; }
   .acts .ok { background:#2fc23a; color:#fff; } .acts .undo { background:#dff1ff; } .acts .del { background:#ffe2e2; color:#a11; }
+  .acts .del.sure { background:#e2321e; color:#fff; }
+  .acts button:disabled { opacity:.5; }
+  .err { background:#ffe2e2; color:#a11; font-weight:700; }
   .empty { text-align:center; padding:30px; color:#5a6890; }
   @media (max-width:560px) { .item { grid-template-columns:1fr; } }
 </style>
@@ -100,7 +103,7 @@ Cloud.onChange(st => {
   const loggedIn = !!st.user;
   $('login').hidden = loggedIn; $('app').hidden = !loggedIn && !Cloud.pending();
   $('who').innerHTML = loggedIn ? `${esc(st.user.email)} <button class="tab" id="out">登出</button>` : '';
-  if (loggedIn) $('out').onclick = () => Cloud.signOut();
+  if (loggedIn) $('out').onclick = () => Cloud.signOut();   // 家長專區登出不用確認
   $('cfg').textContent = !st.configured ? '⚠️ Firebase 還沒設定好，目前只能看這台裝置上的紀錄（設定方法：docs/firebase-setup.md）。'
     : st.error ? '⚠️ ' + st.error : '';
   if (loggedIn || Cloud.pending()) { $('app').hidden = false; load(); }
@@ -147,11 +150,31 @@ function render() {
 $('list').onclick = async e => {
   const b = e.target.closest('[data-a]'); if (!b) return;
   const id = b.closest('[data-id]').dataset.id;
-  if (b.dataset.a === 'ok') await Cloud.setResolved(id, true);
-  else if (b.dataset.a === 'undo') await Cloud.setResolved(id, false);
-  else if (b.dataset.a === 'del' && confirm('確定要刪除這筆紀錄嗎？')) await Cloud.remove(id);
-  load();
+  // 刪除要按兩次：第一次變成「確定刪除？」，3 秒內再按一次才刪（不用瀏覽器的確認視窗，有些瀏覽器會把它擋掉）
+  if (b.dataset.a === 'del' && !b.classList.contains('sure')) {
+    b.classList.add('sure'); b.textContent = '確定刪除？';
+    setTimeout(() => { if (b.isConnected) { b.classList.remove('sure'); b.textContent = '刪除'; } }, 3000);
+    return;
+  }
+  b.disabled = true;
+  try {
+    if (b.dataset.a === 'ok') await Cloud.setResolved(id, true);
+    else if (b.dataset.a === 'undo') await Cloud.setResolved(id, false);
+    else if (b.dataset.a === 'del') await Cloud.remove(id);
+    load();
+  } catch (err) {
+    b.disabled = false;
+    showError('沒有成功：' + (err.message || err));
+  }
 };
+
+// 畫面上方顯示錯誤（不用彈出視窗）
+function showError(msg) {
+  let box = $('err');
+  if (!box) { box = document.createElement('div'); box.id = 'err'; box.className = 'card err'; $('app').prepend(box); }
+  box.textContent = '⚠️ ' + msg;
+  clearTimeout(showError.t); showError.t = setTimeout(() => box.remove(), 8000);
+}
 </script>
 </body>
 </html>

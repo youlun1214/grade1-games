@@ -1,10 +1,31 @@
 rules_version = '2';
-// 小一打怪獸：答錯清單的安全規則
-// 只有登入的家長本人，可以讀寫自己帳號底下的資料（users/{自己的 uid}/...）；其他人什麼都看不到
+// 專案 cb-working-base 的 Firestore 安全規則（同一個專案有兩個應用程式共用，部署時會整份覆蓋，兩段都要保留）
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // 即時文字雲：任何人可讀、可新增，但不能修改或刪除別人的詞
+    // 老師要清空資料時，請 Claude 透過 Firebase MCP 刪除（MCP 用老師帳號，不受此規則限制）
+    match /wordcloud_words/{document} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasOnly(['word', 'room', 'createdAt'])
+        && request.resource.data.word is string
+        && request.resource.data.word.size() >= 1
+        && request.resource.data.word.size() <= 20
+        && request.resource.data.room is string
+        && request.resource.data.room.size() >= 1
+        && request.resource.data.room.size() <= 30
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    // 小一打怪獸（grade1-games）答錯清單：只有登入的家長本人，可以讀寫自己帳號底下的資料
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // 其他集合預設禁止存取
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

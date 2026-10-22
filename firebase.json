@@ -1,0 +1,13 @@
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "小一打怪獸",
+        "supportEmail": "youlun1214@gmail.com"
+      }
+    }
+  }
+}

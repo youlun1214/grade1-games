@@ -30,6 +30,15 @@
   // 國字旁邊加注音（有載入 shared/zhuyin.js 才會加）
   // 只加在：輸入名字的畫面（大標題、名字欄、開始按鈕、玩家清單；副標題和聲音設定不加）、關卡地圖和排行榜的大標題
   const zy = el => { if (window.Zhuyin && el) window.Zhuyin.apply(el); };
+  // 重要的按鈕要按兩次：第一次文字變成「再按一次確認」，3 秒內再按才算數
+  // （不用瀏覽器的 confirm 確認視窗，有些瀏覽器會把它擋掉，看起來就像按了沒反應）
+  function twoStep(btn, sureText) {
+    if (btn.dataset.sure) return true;
+    const old = btn.innerHTML;
+    btn.dataset.sure = '1'; btn.textContent = sureText;
+    setTimeout(() => { if (btn.isConnected) { delete btn.dataset.sure; btn.innerHTML = old; } }, 3000);
+    return false;
+  }
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const MEDALS = ['🥇', '🥈', '🥉'];
 
@@ -225,7 +234,7 @@
       if (act === 'switch') o.onSwitch();
       else if (act === 'review') o.onReview();
       else if (act === 'board') o.onBoard();
-      else if (act === 'unlock' && confirm(`要幫 ${p.name} 解鎖全部 ${total} 關嗎？`)) {
+      else if (act === 'unlock' && twoStep(e.target.closest('[data-act]'), `確定要幫 ${p.name} 解鎖全部 ${total} 關？再按一次`)) {
         const pp = getPlayer(o.gameId, o.name); pp.unlocked = total; savePlayer(o.gameId, pp);
         renderMap(el, o);
       }
@@ -262,7 +271,7 @@
         span.innerHTML = `<button class="lv-voice" data-cloud-act="in">☁️ 家長登入</button>${n ? `<small>有 ${n} 筆答錯紀錄等著上傳</small>` : ''}`;
       }
       span.querySelector('[data-cloud-act="in"]') && (span.querySelector('[data-cloud-act="in"]').onclick = e => { e.stopPropagation(); Cloud.signIn(); });
-      span.querySelector('[data-cloud-act="out"]') && (span.querySelector('[data-cloud-act="out"]').onclick = e => { e.stopPropagation(); if (confirm('要登出嗎？之後的答錯紀錄會先存在這台裝置。')) Cloud.signOut(); });
+      span.querySelector('[data-cloud-act="out"]') && (span.querySelector('[data-cloud-act="out"]').onclick = e => { e.stopPropagation(); if (twoStep(e.currentTarget, '確定登出？再按一次')) Cloud.signOut(); });
     });
   }
 

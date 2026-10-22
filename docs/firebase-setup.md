@@ -6,6 +6,18 @@
 > 專案：`cb-working-base`
 > 主控台：https://console.firebase.google.com/
 
+## ✅ 目前進度（2026-10-22，由 Claude 透過 Firebase MCP 完成）
+| 步驟 | 狀態 |
+|---|---|
+| 1. 開啟 Google 登入 | ✅ 已完成（`firebase.json` 的 auth 設定，已部署） |
+| 2. 授權網域 `localhost`、`youlun1214.github.io` | ✅ 家長已在主控台手動加好（工具做不到這步） |
+| 3. 建立資料庫 | ✅ 原本就有（同專案的「即時文字雲」在用） |
+| 4. 安全規則 | ✅ 已部署（`firestore.rules`：保留文字雲規則，再加上答錯清單規則）；已測試沒登入讀不到 |
+| 5. 網頁應用程式 `grade1-games` | ✅ 已建立，設定碼已放進 `shared/firebase-config.js` |
+| 6. 登入 | ✅ 電腦上已登入成功、答錯紀錄已確認存進雲端；⬜ 平板還要按「☁️ 家長登入」一次 |
+
+> ⚠️ 這個 Firebase 專案和「即時文字雲」共用。**安全規則部署時是整份覆蓋**，以後改 `firestore.rules` 一定要保留文字雲那一段。
+
 ---
 
 ## 1. 開啟 Google 登入
