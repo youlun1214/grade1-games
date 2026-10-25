@@ -28,6 +28,20 @@
     熊 ㄒㄩㄥˊ 🐻|床 ㄔㄨㄤˊ 🛏️|肉 ㄖㄡˋ 🍖|草 ㄘㄠˇ 🌿|圓 ㄩㄢˊ ⭕
     月 ㄩㄝˋ 🌙|雲 ㄩㄣˊ ☁️|心 ㄒㄧㄣ ❤️|蚊 ㄨㄣˊ 🦟|雪 ㄒㄩㄝˇ ❄️|裙 ㄑㄩㄣˊ 👗`;
 
+  // ===== 課文詞語（照課本抄：詞、每個字的注音）=====
+  // 第幾行就是第幾課；課本的輕聲寫成「˙ㄉㄧ」。還沒抄的課先空著，有詞語的課才會出「課文詞語」題
+  const TEXTS = [
+    /* 1 貓咪 */   '貓咪 ㄇㄠ ㄇㄧ|咪咪咪 ㄇㄧ ㄇㄧ ㄇㄧ|弟弟 ㄉㄧˋ ˙ㄉㄧ|跑第一 ㄆㄠˇ ㄉㄧˋ ㄧ',
+    /* 2 鵝寶寶 */ '鵝媽媽 ㄜˊ ㄇㄚ ˙ㄇㄚ|哈哈哈 ㄏㄚ ㄏㄚ ㄏㄚ|好得意 ㄏㄠˇ ㄉㄜˊ ㄧˋ|孵出 ㄈㄨ ㄔㄨ|鵝寶寶 ㄜˊ ㄅㄠˇ ˙ㄅㄠ|五隻 ㄨˇ ㄓ',
+    /* 3 河馬和河狸 */ '',
+    /* 4 笑嘻嘻 */ '',
+    /* 5 翹翹板 */ '',
+    /* 6 謝謝老師 */ '',
+    /* 7 龜兔賽跑 */ '',
+    /* 8 拔蘿蔔 */ '',
+    /* 9 動物狂歡會 */ '',
+  ];
+
   // ===== 符號分類 =====
   const INITIALS = 'ㄅㄆㄇㄈㄉㄊㄋㄌㄍㄎㄏㄐㄑㄒㄓㄔㄕㄖㄗㄘㄙ';   // 聲符
   const MEDIALS = 'ㄧㄨㄩ';                                     // 介符
@@ -70,6 +84,31 @@
     return { w, zy, e, syms, tone, level };
   });
 
+  // 課文詞語：{ w:'弟弟', zys:['ㄉㄧˋ','˙ㄉㄧ'], level:1 }
+  const TEXT_LIST = TEXTS.flatMap((line, i) => line.split('|').map(s => s.trim()).filter(Boolean).map(s => {
+    const [w, ...zys] = s.split(/\s+/);
+    return { w, zys, level: i + 1 };
+  }));
+  const zyJoin = zys => zys.join(' ');
+  // 這一關能出的課文詞語：70% 出這一課的，其他複習前面的課
+  function pickText(L, last) {
+    const all = TEXT_LIST.filter(t => t.level <= Math.min(L, 9));
+    const fresh = all.filter(t => t.level === L);
+    const pool = (fresh.length && Math.random() < .7) ? fresh : all;
+    const noRepeat = pool.filter(t => !last || t.w !== last.word);
+    return pick(noRepeat.length ? noRepeat : pool);
+  }
+  // 一個音的「錯誤版本」：換一個同類的符號，或換聲調
+  function syllableVariants(zy, L) {
+    const { syms, tone } = parse(zy), learned = learnedSyms(L), out = new Set();
+    syms.forEach((s, i) => {
+      distract(s, learned.filter(x => kindOf(x) === kindOf(s)), 2).forEach(d => { const c = [...syms]; c[i] = d; out.add(fmt(c, tone)); });
+    });
+    [1, 2, 3, 4, 5].filter(t => t !== tone).forEach(t => out.add(fmt(syms, t)));
+    out.delete(zy);
+    return shuffle([...out]);
+  }
+
   function learnedSyms(L) { return LESSONS.slice(0, Math.min(L, 9)).flatMap(l => [...l.symbols]); }
   function newSyms(L) { return L <= 9 ? [...LESSONS[L - 1].symbols] : []; }
   function usableWords(L) { return WORD_LIST.filter(w => w.level <= Math.min(L, 9)); }
@@ -107,8 +146,30 @@
   const big = s => `<div class="zq-zy">${s}</div>`;
   const prompt = s => `<div class="zq-prompt">${s}</div>`;
 
-  // ===== 7 種題型 =====
+  // ===== 9 種題型 =====
   const TYPES = {
+    // 8. 課文詞語：看（聽）課文裡的詞，選出正確的注音
+    text(L, last) {
+      const t = pickText(L, last);
+      const wrong = new Set();
+      for (let k = 0; k < 20 && wrong.size < 3; k++) {
+        const i = rand(t.zys.length), c = [...t.zys];
+        c[i] = pick(syllableVariants(t.zys[i], L));
+        if (zyJoin(c) !== zyJoin(t.zys)) wrong.add(zyJoin(c));
+      }
+      const choices = shuffle([zyJoin(t.zys), ...wrong]).map(z => ({ html: `<span class="zq-multi">${z}</span>`, value: z }));
+      return { word: t.w, html: prompt('課文裡的詞，注音是哪一個？') + `<div class="zq-text no-zy">${t.w}</div>`,
+               speech: `${t.w}，${t.w}的注音是哪一個？`, choices, ans: zyJoin(t.zys), answerText: zyJoin(t.zys) };
+    },
+    // 9. 課文詞語填空：詞裡面少了一個字的注音
+    textblank(L, last) {
+      const t = pickText(L, last);
+      const i = rand(t.zys.length), ans = t.zys[i];
+      const shown = t.zys.map((z, j) => j === i ? '<span class="zq-blank">？</span>' : z).join(' ');
+      const choices = shuffle([ans, ...syllableVariants(ans, L).slice(0, 3)]);
+      return { word: t.w, html: prompt('這個詞少了哪一個注音？') + `<div class="zq-text no-zy">${t.w}</div>` + big(shown),
+               speech: `${t.w}，${t.w}少了哪一個注音？`, choices, ans, answerText: ans };
+    },
     // 1. 聽音找圖：看符號、聽四個詞，找出有這個音的那一個（符號↔發音）
     hunt(L, last) {
       const words = usableWords(L);
@@ -193,6 +254,12 @@
 
   // ===== 每關的題型比重（數字越大越常出現）=====
   function weightsFor(L) {
+    const w = baseWeights(L);
+    // 這一課（或前面的課）有抄課文詞語，就加進來一起出
+    if (TEXT_LIST.some(t => t.level <= Math.min(L, 9))) Object.assign(w, { text: L === 1 ? 3 : 2, textblank: L === 1 ? 1 : 2 });
+    return w;
+  }
+  function baseWeights(L) {
     if (L === 1) return { hunt: 3, first: 2, pic2zy: 2, zy2pic: 2, tone: 1 };
     if (L <= 3) return { hunt: 3, first: 2, pic2zy: 3, zy2pic: 2, tone: 2, missing: 1 };
     if (L === 4) return { hunt: 2, first: 2, pic2zy: 3, zy2pic: 2, tone: 2, missing: 2 };
@@ -215,5 +282,5 @@
     return [...LESSONS.map(l => ({ title: l.title, desc: l.symbols || l.combos.join(' ') })), BOSS];
   }
 
-  window.ZhuyinBank = { LESSONS, WORD_LIST, question, levels, parse, TYPES };
+  window.ZhuyinBank = { LESSONS, WORD_LIST, TEXT_LIST, question, levels, parse, TYPES };
 })();

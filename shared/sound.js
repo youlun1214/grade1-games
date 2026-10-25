@@ -1,5 +1,11 @@
 // 共用音效與語音：所有遊戲都可以用 Sound.beep()、Sound.say()
 // 語音會自動挑這台裝置上「最像真人」的中文聲音；家長也可以在「聲音設定」自己選（Sound.openPicker()）
+// 從 LINE 打開遊戲時，自動改用手機的 Safari／Chrome 開：LINE 內建的瀏覽器關掉後常會清掉挑戰紀錄，也不能用 Google 登入
+(function () {
+  if (!/\bLine\//i.test(navigator.userAgent) || /openExternalBrowser=1/.test(location.search)) return;
+  try { const u = new URL(location.href); u.searchParams.set('openExternalBrowser', '1'); location.replace(u.href); } catch (e) {}
+})();
+
 (function () {
   let ctx;
 

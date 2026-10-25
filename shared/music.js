@@ -78,6 +78,9 @@
   // 後半段戰鬥：同一首戰鬥曲，升高 5 個半音、加快
   SONGS.battle2 = Object.assign({}, SONGS.battle, { bpm: 162, transpose: 5 });
 
+  // iPhone 側邊的「靜音」打開時，網頁合成的聲音（背景音樂）預設會被關掉；設成 playback 就和影片一樣照常出聲（Safari 16.4 以上）
+  try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+
   // ===== 樂器 =====
   function ensureCtx() {
     if (ctx) return ctx;
@@ -167,11 +170,16 @@
   }
 
   // 瀏覽器規定：要等使用者點過畫面才能出聲音
+  // iPhone／iPad：要在「手指放開」(touchend、click) 時解鎖，還要先播一小段無聲的聲音；切去別的 App 回來時狀態會是 interrupted
+  let primed = false;
   function unlock() {
     if (!ensureCtx()) return;
-    if (ctx.state === 'suspended') ctx.resume().then(() => { if (enabled && current && !timer) startTrack(current); });
+    if (!primed) {
+      try { const s = ctx.createBufferSource(); s.buffer = ctx.createBuffer(1, 1, 22050); s.connect(ctx.destination); s.start(0); primed = true; } catch (e) {}
+    }
+    if (ctx.state !== 'running') ctx.resume().then(() => { if (enabled && current && !timer) startTrack(current); }).catch(() => {});
   }
-  ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, unlock, { capture: true, passive: true }));
+  ['pointerdown', 'keydown', 'touchstart', 'touchend', 'click'].forEach(ev => document.addEventListener(ev, unlock, { capture: true, passive: true }));
   document.addEventListener('click', e => { if (e.target.closest('[data-music-toggle]')) toggle(); });
   // 切到別的分頁就暫停，回來再繼續
   document.addEventListener('visibilitychange', () => {

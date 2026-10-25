@@ -1,6 +1,7 @@
 // 雲端答錯紀錄（Firebase）：家長用 Google 帳號登入後，答錯的題目會存到 Firestore，任何裝置都能在「家長專區」查看
 // 還沒設定 Firebase 或還沒登入時，紀錄先存在這台裝置（localStorage），登入後自動上傳
 // 資料位置：users/{家長的 uid}/mistakes/{遊戲~玩家~題目}，安全規則只讓本人讀寫（見 docs/firebase-setup.md）
+// 玩家挑戰紀錄（排行榜）也會存一份在 users/{uid}/games/{遊戲}
 // 用法（其他程式透過 window.Cloud 呼叫）：Cloud.recordMistake()、Cloud.recordReviewCorrect()、Cloud.list()、Cloud.signIn()
 const SDK = 'https://www.gstatic.com/firebasejs/10.12.2/';
 const QUEUE_KEY = 'grade1-games:mistake-queue';
@@ -109,11 +110,22 @@ async function list({ game, player, includeResolved = true } = {}) {
     .filter(m => includeResolved || !m.resolved)
     .sort((a, b) => (a.resolved - b.resolved) || (b.count - a.count) || (b.lastWrong - a.lastWrong));
 }
+// 玩家挑戰紀錄（排行榜）：users/{uid}/games/{遊戲}，換裝置或瀏覽器資料被清掉也找得回來
+function gameRef(game) { return fb.F.doc(fb.db, 'users', state.user.uid, 'games', game); }
+async function savePlayers(game, players) {
+  if (fb && state.user) await fb.F.setDoc(gameRef(game), { players, updated: fb.F.serverTimestamp() });
+}
+async function loadPlayers(game) {
+  if (!fb || !state.user) return null;
+  const snap = await fb.F.getDoc(gameRef(game));
+  return snap.exists() ? (snap.data().players || {}) : {};
+}
+
 async function setResolved(id, resolved) { if (fb && state.user) await fb.F.updateDoc(ref(id), { resolved, streak: resolved ? REVIEW_PASS : 0 }); }
 async function remove(id) { if (fb && state.user) await fb.F.deleteDoc(ref(id)); }
 
 window.Cloud = {
-  state, signIn, signOut, recordMistake, recordReviewCorrect, recordReviewWrong, list, setResolved, remove,
+  state, signIn, signOut, savePlayers, loadPlayers, recordMistake, recordReviewCorrect, recordReviewWrong, list, setResolved, remove,
   pending: () => readQueue().length, REVIEW_PASS,
   onChange(cb) { listeners.add(cb); if (state.ready) cb(state); return () => listeners.delete(cb); },
 };

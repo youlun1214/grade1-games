@@ -1,6 +1,6 @@
 // 關卡制：10 隻怪獸、每關的難度、玩家名字與挑戰紀錄、開始畫面、關卡地圖、排行榜
 // 數學、注音遊戲共用。搭配 shared/levels.css 使用
-// 紀錄存在這台裝置的瀏覽器裡（換平板或清除瀏覽資料就會不見）
+// 紀錄存在這台裝置的瀏覽器裡；家長登入後也會存一份到雲端（Firebase），瀏覽器資料被清掉或換裝置都找得回來
 (function () {
   // ===== 10 隻怪獸：奧特曼經典怪獸，由弱到強（數學、注音共用同一組圖）=====
   // 圖片放在 assets/monsters/monster-01.png、monster-01-hurt.png、monster-01-down.png …
@@ -76,7 +76,47 @@
     return Object.assign({ name, unlocked: 1, stars: {}, best: 0, lastLevel: 0, lastWon: false, plays: 0, totalScore: 0, lastPlayed: '' },
                          allPlayers(gameId)[name] || {});
   }
-  function savePlayer(gameId, p) { const all = allPlayers(gameId); all[p.name] = p; write(key(gameId, 'players'), all); }
+  function savePlayer(gameId, p) { const all = allPlayers(gameId); all[p.name] = p; write(key(gameId, 'players'), all); pushCloud(gameId); }
+
+  // ===== 雲端同步（家長登入後）=====
+  // 同一個人在兩邊都有紀錄時合併：星星、過關、次數取比較多的，「上次挑戰」取比較新的
+  function mergePlayer(a, b) {
+    if (!a) return b; if (!b) return a;
+    const [old, neu] = (a.lastPlayed || '') > (b.lastPlayed || '') ? [b, a] : [a, b];
+    const stars = Object.assign({}, old.stars);
+    Object.entries(neu.stars || {}).forEach(([k, v]) => { stars[k] = Math.max(stars[k] || 0, v); });
+    return Object.assign({}, old, neu, { stars, best: Math.max(a.best || 0, b.best || 0), unlocked: Math.max(a.unlocked || 1, b.unlocked || 1),
+      plays: Math.max(a.plays || 0, b.plays || 0), totalScore: Math.max(a.totalScore || 0, b.totalScore || 0) });
+  }
+  const loggedIn = () => !!(window.Cloud && Cloud.state.user);
+  const pushTimers = {};
+  function pushCloud(gameId) {
+    if (!loggedIn()) return;
+    clearTimeout(pushTimers[gameId]);
+    pushTimers[gameId] = setTimeout(() => Cloud.savePlayers(gameId, allPlayers(gameId)).catch(() => {}), 800);
+  }
+  // 登入後把雲端的紀錄拿回來合併；有變動就呼叫 onChanged（重畫畫面）
+  const syncing = {};
+  function syncCloud(gameId, onChanged) {
+    syncing[gameId] = onChanged;
+    if (syncing[gameId + ':on']) return;
+    if (!window.Cloud) { setTimeout(() => syncCloud(gameId, onChanged), 200); return; }
+    syncing[gameId + ':on'] = true;
+    let lastUid = '';
+    Cloud.onChange(async st => {
+      if (!st.user || st.user.uid === lastUid) return;
+      lastUid = st.user.uid;
+      try {
+        const remote = await Cloud.loadPlayers(gameId) || {};
+        const local = allPlayers(gameId), merged = Object.assign({}, local);
+        Object.entries(remote).forEach(([n, p]) => { merged[n] = mergePlayer(local[n], p); });
+        const changed = JSON.stringify(merged) !== JSON.stringify(local);
+        write(key(gameId, 'players'), merged);
+        if (JSON.stringify(merged) !== JSON.stringify(remote)) await Cloud.savePlayers(gameId, merged);
+        if (changed && syncing[gameId]) syncing[gameId]();
+      } catch (e) {}
+    });
+  }
   function current(gameId) { return read(key(gameId, 'current'), ''); }
   function setCurrent(gameId, name) { write(key(gameId, 'current'), name); if (!allPlayers(gameId)[name]) savePlayer(gameId, getPlayer(gameId, name)); }
   const totalStars = p => Object.values(p.stars || {}).reduce((a, b) => a + b, 0);
@@ -131,6 +171,8 @@
    * o.gameId, o.title, o.subtitle, o.base, o.homeHref, o.onStart(name), o.onBoard()
    */
   function renderStart(el, o) {
+    // 家長登入後，雲端的紀錄拿回來合併，還停在這個畫面就重畫一次
+    syncCloud(o.gameId, () => { if (el.querySelector('.lv-start')) renderStart(el, o); });
     const players = Object.values(allPlayers(o.gameId)).map(p => getPlayer(o.gameId, p.name))
       .sort((a, b) => (b.lastPlayed || '').localeCompare(a.lastPlayed || ''));
     el.innerHTML = `
