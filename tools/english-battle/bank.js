@@ -1,5 +1,5 @@
 // 英文題庫：10 關（字母 3 關、顏色、數字、交通工具、動物、水果、身體、魔王關）
-// 依學校一年級「國際教育」的主題（顏色：叭叭計程車、叮叮腳踏車、嘟嘟巴士）＋小一常見入門單字
+// 學校一年級的英語課（校訂課程）課本還沒拿到，先用小一常見的入門單字
 // 之後拿到康軒英語課本，把課本的單字照格式加進 UNITS 就好（英文、中文、emoji、圖示名稱）
 (function () {
   const rand = n => Math.floor(Math.random() * n);
@@ -118,9 +118,9 @@
     { title: '字母 A～I',   desc: 'A B C D E F G H I', letters: 'ABCDEFGHI', types: { letterListen: 3, upperLower: 2 } },
     { title: '字母 J～R',   desc: 'J K L M N O P Q R', letters: 'JKLMNOPQR', types: { letterListen: 3, upperLower: 2 } },
     { title: '字母 S～Z',   desc: 'S T U V W X Y Z', letters: 'STUVWXYZ', types: { letterListen: 3, upperLower: 2, firstLetter: 1 } },
-    { title: '顏色 Colors', desc: '叭叭計程車：red、blue…', unit: 'colors', types: { listen: 3, look: 2 } },
+    { title: '顏色 Colors', desc: 'red、blue、yellow…', unit: 'colors', types: { listen: 3, look: 2 } },
     { title: '數字 Numbers', desc: 'one 到 ten', unit: 'numbers', types: { listen: 3, look: 2 } },
-    { title: '交通工具',    desc: '叮叮腳踏車、嘟嘟巴士', unit: 'transport', types: { listen: 3, look: 2 } },
+    { title: '交通工具',    desc: 'taxi、bus、bike…', unit: 'transport', types: { listen: 3, look: 2 } },
     { title: '動物 Animals', desc: 'cat、dog…', unit: 'animals', types: { listen: 3, look: 2 } },
     { title: '水果 Fruits', desc: 'apple、banana…', unit: 'fruits', types: { listen: 3, look: 2 } },
     { title: '身體 Body',   desc: 'eye、ear、nose…', unit: 'body', types: { listen: 3, look: 2 } },
