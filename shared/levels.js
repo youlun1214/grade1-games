@@ -320,7 +320,7 @@
   // 答錯一題時記下來（itemKey：同一題用同一個代號，錯很多次會累加）
   function recordWrong(game, player, levelNo, q, chosen, chosenText, itemKey) {
     if (!window.Cloud) return;
-    const keep = { html: q.html, choices: q.choices, ans: q.ans, speech: q.speech, answerText: q.answerText, type: q.type };
+    const keep = { html: q.html, choices: q.choices, ans: q.ans, speech: q.speech, answerText: q.answerText, answerSpeech: q.answerSpeech, type: q.type };
     Cloud.recordMistake({ game, player, level: levelNo, type: q.type, itemKey, q: keep, chosen: String(chosen), chosenText }).catch(() => {});
   }
 

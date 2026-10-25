@@ -319,7 +319,7 @@
         if (rightBtn) rightBtn.classList.add('right');
         const ansText = opts.answerText ? opts.answerText(q) : String(q.ans);
         log(`答案是 ${ansText}，小心！`, 'bad');
-        Sound.say(`答案是 ${ansText}`);
+        Sound.say(q.answerSpeech ? ['答案是', ...[].concat(q.answerSpeech)] : `答案是 ${ansText}`);   // answerSpeech：英文答案用英文聲音唸，例如 { en: 'cat' }
         startCharge(R.wrongChargeTime);
         later(() => {
           stopCharge();

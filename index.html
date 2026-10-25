@@ -49,6 +49,8 @@
   .card .big { font-size:clamp(5rem,22vw,8rem); font-weight:900; line-height:1; color:#ff3b2a;
                -webkit-text-stroke:4px #fff; paint-order:stroke fill; filter:drop-shadow(0 5px 0 rgba(0,0,0,.25)); }
   .card.math .big { color:#fff; -webkit-text-stroke:4px #0b2a7a; }
+  .card.english { background:linear-gradient(#a8f08a, #3cbf3a 55%, #1f8a24); }
+  .card.english .big { color:#fff; -webkit-text-stroke:4px #145a18; }
   .card .name { font-size:clamp(1.7rem,6.5vw,2.3rem); font-weight:900; text-shadow:0 3px 0 rgba(0,0,0,.3); }
   .card .desc { font-size:1.1rem; font-weight:700; background:rgba(0,0,0,.2); padding:4px 14px; border-radius:999px; }
   .others { width:100%; margin-top:20px; text-align:center; color:#cfd8f0; }
@@ -68,6 +70,7 @@
       <div class="logo-text logo">小一<br>打怪獸</div>
       <a class="btn btn-orange" href="tools/zhuyin-battle/">注音打怪獸</a>
       <a class="btn btn-blue" href="tools/math-battle/">數學打怪獸</a>
+      <a class="btn btn-green" href="tools/english-battle/">英文打怪獸</a>
     </div>
   </div>
   <button class="more" data-go="modes">看全部遊戲 ▸</button>
@@ -90,6 +93,11 @@
       <span class="big">1+2</span>
       <span class="name">數學打怪獸</span>
       <span class="desc">翰林一上・10 關</span>
+    </a>
+    <a class="card english" href="tools/english-battle/">
+      <span class="big">ABC</span>
+      <span class="name">英文打怪獸</span>
+      <span class="desc">字母・單字・10 關</span>
     </a>
   </div>
   <div class="others">📝 單元練習：<a href="tools/math-add-within-10/">🍎 10 以內加減（不計時練習）</a></div>

@@ -51,6 +51,7 @@
 .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 rgba(0,0,0,.35), inset 0 -6px 10px rgba(0,0,0,.15); }
 .btn-gold { background: linear-gradient(var(--gold-1), var(--gold-2) 55%, var(--gold-3)); color: #6a2e00; text-shadow: 0 1px 0 rgba(255,255,255,.6); }
 .btn-blue { background: linear-gradient(var(--blue-1), var(--blue-2) 55%, var(--blue-3)); }
+.btn-green { background: linear-gradient(#a8f08a, #3cbf3a 55%, #1f8a24); }
 .btn-gray { background: linear-gradient(#eef0f5, var(--gray-2) 70%, var(--gray-3)); }
 .btn-orange { background: linear-gradient(#ffd27a, #ff9a1f 55%, #e05e00); }
 

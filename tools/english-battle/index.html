@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>英文打怪獸</title>
+<link rel="stylesheet" href="../../shared/ui.css">
+<link rel="stylesheet" href="../../shared/battle.css">
+<link rel="stylesheet" href="../../shared/levels.css">
+<script src="../../shared/sound.js"></script>
+<script src="../../shared/music.js"></script>
+<script src="../../shared/zhuyin.js"></script>
+<script src="../../shared/icons.js"></script>
+<script src="../../shared/battle.js"></script>
+<script src="../../shared/levels.js"></script>
+<script src="../../shared/firebase-config.js"></script>
+<script type="module" src="../../shared/cloud.js"></script>
+<script src="bank.js"></script>
+<style>
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body { margin:0; background:#141a3a; color:#1d2340; user-select:none; font-family:var(--font); }
+  .screen { display:none; min-height:100%; max-width:780px; margin:0 auto; }
+  .screen.on { display:block; }
+  #battle { padding:0 10px; background:linear-gradient(#2a3a8a, #141a3a); }
+  button { font-family:inherit; cursor:pointer; }
+
+  /* ===== 題目框裡的樣式 ===== */
+  .eq-prompt { font-size:clamp(1.4rem,5.4vw,1.95rem); font-weight:900; color:#1d2340; line-height:1.5; }
+  .eq-en { font-family:'Comic Sans MS','Chalkboard SE','Segoe Print',var(--font); font-weight:700; letter-spacing:.03em; }
+  .eq-big { font-size:clamp(3rem,14vw,4.4rem); font-weight:900; color:#1d2340; line-height:1.1; }
+  .eq-pic { margin-top:4px; }
+  .eq-pic .ic.big { width:clamp(90px,24vw,130px); height:clamp(90px,24vw,130px); font-size:clamp(4rem,18vw,5.6rem); }
+  .eq-ear { display:inline-flex; align-items:center; justify-content:center; width:clamp(84px,22vw,110px); height:clamp(84px,22vw,110px); margin-top:6px;
+            font-size:clamp(2.6rem,11vw,3.4rem); background:#fff3c4; border:4px solid #1d2340; border-radius:50%; box-shadow:0 4px 0 rgba(0,0,0,.25); cursor:pointer; }
+  .eq-ear:active { transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.25); }
+  .eq-swatch { display:inline-block; width:clamp(56px,14vw,84px); height:clamp(56px,14vw,84px); border-radius:14px; background:var(--c); border:3px solid #1d2340; }
+  .eq-pic .eq-swatch { width:clamp(90px,24vw,120px); height:clamp(90px,24vw,120px); }
+  .eq-num { font-size:clamp(2.2rem,9vw,3rem); font-weight:900; }
+  .bt-choices .ic { width:clamp(56px,13vw,84px); height:clamp(56px,13vw,84px); font-size:clamp(2.6rem,11vw,3.4rem); }
+  .bt-choices button:has(.eq-en) { font-size:clamp(1.5rem,6.5vw,2.1rem); }
+</style>
+</head>
+<body>
+
+<!-- 開始：輸入名字 -->
+<section class="screen on" id="start"></section>
+
+<!-- 關卡地圖 -->
+<section class="screen" id="map"></section>
+
+<!-- 排行榜 -->
+<section class="screen" id="board"></section>
+
+<!-- 對戰（畫面由 shared/battle.js 產生）-->
+<section class="screen" id="battle"></section>
+
+<script>
+const BASE = '../../';           // 回到專案根目錄
+const GAME_ID = 'english-battle';   // 存紀錄用（和數學、注音分開）
+const TITLE = '🔤 英文打怪獸';
+const LEVELS = EnglishBank.levels();
+const $ = id => document.getElementById(id);
+let playerName = '';
+let backTo = 'start';            // 排行榜按「返回」要回到哪裡
+
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); window.scrollTo(0, 0); }
+
+function showStart() {
+  show('start');
+  Levels.renderStart($('start'), {
+    gameId: GAME_ID, title: '英文打怪獸', homeHref: BASE, base: BASE,
+    subtitle: '字母、顏色、數字、動物…一關一隻怪獸！',
+    onStart: name => { playerName = name; showMap(); },
+    onBoard: () => showBoard('start'),
+  });
+}
+
+function showMap() {
+  show('map');
+  Levels.renderMap($('map'), {
+    gameId: GAME_ID, name: playerName, base: BASE, levels: LEVELS, title: TITLE,
+    onPick: startLevel,
+    onSwitch: showStart,
+    // 錯題複習：只出這位玩家答錯過的題目
+    onReview: () => {
+      show('battle');
+      Levels.startReview({
+        game: GAME_ID, player: playerName, root: $('battle'), base: BASE, moves: ['字母光線', 'ABC 飛踢', '英文火焰拳', '光之斬擊'],
+        speech: q => q.speech, answerText: q => q.answerText, onExit: showMap,
+      }).then(ok => { if (!ok) showMap(); });
+    },
+    onBoard: () => showBoard('map'),
+  });
+}
+
+function showBoard(from) {
+  backTo = from;
+  show('board');
+  Levels.renderBoard($('board'), {
+    gameId: GAME_ID, title: TITLE, name: playerName,
+    onBack: () => backTo === 'map' ? showMap() : showStart(),
+  });
+}
+
+function startLevel(i) {
+  show('battle');
+  Battle.start({
+    root: $('battle'),
+    level: { no: i + 1, title: LEVELS[i].title, monster: Levels.monster(i, BASE), rules: Levels.TIMING[i] },
+    player: Levels.player(BASE, ['字母光線', 'ABC 飛踢', '英文火焰拳', '光之斬擊'], playerName, Levels.getPlayer(GAME_ID, playerName).best + 1),
+    nextQuestion: last => EnglishBank.question(i + 1, last),
+    renderQuestion: (q, el) => { el.innerHTML = q.html; },
+    speech: q => q.speech,
+    answerText: q => q.answerText,
+    background: Levels.scene(i, BASE),   // 每一關有自己的場景
+    hasNext: i < LEVELS.length - 1,
+    isLast: i === LEVELS.length - 1,
+    // 每場打完都記錄，結算畫面附上排行榜
+    onEnd: r => Levels.recordResult(GAME_ID, playerName, i + 1, r, LEVELS.length),
+    // 答錯就記到答錯清單（家長專區可以看，錯題複習會再出）
+    onWrong: (q, chosen, chosenText) => Levels.recordWrong(GAME_ID, playerName, i + 1, q, chosen, chosenText, `${q.type}:${q.key}`),
+    overExtra: () => `<div class="lb-title">🏆 排行榜</div>${Levels.boardHtml(GAME_ID, playerName, 5)}`,
+    onNext: () => startLevel(i + 1),
+    onExit: showMap,
+  });
+}
+
+showStart();
+</script>
+</body>
+</html>

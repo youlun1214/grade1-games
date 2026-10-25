@@ -61,18 +61,29 @@
   }
   function setVoice(name) { try { localStorage.setItem(KEY, name); } catch (e) {} }
 
-  // 用選好的聲音唸中文
+  // 英文聲音（英文遊戲用）：美式口音、像真人的優先
+  function enVoice() {
+    if (!hasTTS) return null;
+    const en = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang));
+    const sc = v => (/en[-_]US/i.test(v.lang) ? 20 : 0) + (isNatural(v) ? 50 : 0) + (/Samantha|Aria|Jenny|Ana/i.test(v.name) ? 5 : 0);
+    return en.sort((a, b) => sc(b) - sc(a))[0] || null;
+  }
+
+  // 用選好的聲音唸中文；text 也可以是一串，例如 ['聽一聽，哪一個是', { en: 'cat' }]，英文的部分用英文聲音唸
   function say(text, voice) {
     try {
       if (!hasTTS) return;
       speechSynthesis.cancel();
-      const u = new SpeechSynthesisUtterance(text);
-      const v = voice || current();
-      if (v) u.voice = v;
-      u.lang = v ? v.lang : 'zh-TW';
-      u.rate = isNatural(v) ? .95 : .85;
-      u.pitch = 1.05;
-      speechSynthesis.speak(u);
+      (Array.isArray(text) ? text : [text]).forEach(part => {
+        const en = part && typeof part === 'object';
+        const u = new SpeechSynthesisUtterance(en ? part.en : part);
+        const v = en ? enVoice() : (voice || current());
+        if (v) u.voice = v;
+        u.lang = v ? v.lang : (en ? 'en-US' : 'zh-TW');
+        u.rate = en ? (isNatural(v) ? .8 : .75) : (isNatural(v) ? .95 : .85);   // 英文唸慢一點，孩子比較聽得清楚
+        u.pitch = 1.05;
+        speechSynthesis.speak(u);
+      });
     } catch (e) {}
   }
 
@@ -134,5 +145,5 @@
     .vp-help ul { margin:6px 0 0; padding-left:20px; line-height:1.6; }`;
   document.head.appendChild(css);
 
-  window.Sound = { beep, say, hush, voices: () => loadVoices(), current, setVoice, openPicker };
+  window.Sound = { beep, say, hush, enVoice, voices: () => loadVoices(), current, setVoice, openPicker };
 })();
