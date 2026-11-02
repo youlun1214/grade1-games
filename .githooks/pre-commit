@@ -1,0 +1,5 @@
+#!/bin/sh
+# 每次 commit 自動把 shared/version.js 的版本改成今天（民國年月日），並一起 commit
+y=$(date +%Y); roc=$((y - 1911)); v="V.${roc}$(date +%m%d)"
+f=shared/version.js
+sed -i "s/window.APP_VERSION = 'V\.[0-9]*'/window.APP_VERSION = '$v'/" "$f" && git add "$f"

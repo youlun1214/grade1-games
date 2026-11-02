@@ -57,6 +57,7 @@
 - [🔤 英文打怪獸](tools/english-battle/)：10 關（字母 A～I、J～R、S～Z、顏色、數字、交通工具、動物、水果、身體、魔王關），聽英文選圖、看圖選英文、大寫找小寫、看圖找第一個字母；英文用裝置的英文語音唸（`Sound.say` 可以中英混唸）。單字先用小一常見的入門單字，放在 `bank.js` 的 `UNITS`，之後拿到學校英語課的課本再換成課本單字
 
 ## 工作注意事項
+- 版本標示只在首頁右下角（`shared/version.js`，格式 `V.民國年月日`）：`.githooks/pre-commit` 每次 commit 自動改成當天日期（換電腦要先跑 `git config core.hooksPath .githooks`）
 - repo 是公開的：孩子資料不放真實姓名、照片、學校等可識別資訊（用暱稱即可）
 - commit 訊息要寫清楚做了什麼 + 為什麼
 - 收工前說「收工」讓 Claude 同步三方
