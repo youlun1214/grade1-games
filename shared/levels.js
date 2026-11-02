@@ -49,15 +49,35 @@
     return Object.assign({}, MONSTERS[i], { img: { idle: `${p}.png`, hurt: `${p}-hurt.png`, down: `${p}-down.png` } });
   }
 
-  // 玩家：小小英雄（assets/player/），攻擊時從 7 個招式動作隨機挑一個
+  // ===== 8 位可以選的奧特曼（assets/heroes/<id>/，12 式動作＋必殺技姿勢 player-beam.png）=====
+  // beam：必殺技名稱；color：光波顏色（光芯都是白色，外圈用這個顏色）
+  const HEROES = [
+    { id: 'classic', name: '經典奧特曼',   beam: '斯派修姆光線', color: '#6fd2ff' },
+    { id: 'zero',    name: '賽羅奧特曼',   beam: '集束光線',     color: '#4fa8ff' },
+    { id: 'tiga',    name: '迪迦奧特曼',   beam: '哉佩利敖光線', color: '#c88bff' },
+    { id: 'taiga',   name: '泰迦奧特曼',   beam: '風暴射線',     color: '#ff6a5a' },
+    { id: 'geed',    name: '捷德奧特曼',   beam: '毀滅爆裂',     color: '#5a9bff' },
+    { id: 'z',       name: '澤塔奧特曼',   beam: '傑斯特姆光線', color: '#55e0ff' },
+    { id: 'trigger', name: '特利迦奧特曼', beam: '哉佩利敖光線', color: '#ffd166' },
+    { id: 'belial',  name: '貝利亞奧特曼', beam: '死亡射線',     color: '#ff2d55' },
+  ];
+  const HERO_KEY = 'grade1-games:heroes';   // { 玩家名字: 角色 id }，三個遊戲共用
+  const heroById = id => HEROES.find(h => h.id === id) || HEROES[0];
+  const heroOf = name => heroById(read(HERO_KEY, {})[name]);
+  function setHero(name, id) { const all = read(HERO_KEY, {}); all[name] = id; write(HERO_KEY, all); }
+
+  // 玩家：選好的奧特曼，攻擊時從 7 個招式動作隨機挑一個
   function player(base, moves, name, lv) {
-    const p = n => `${base}assets/player/${n}.png`;
+    const hero = heroOf(name);
+    const p = n => `${base}assets/heroes/${hero.id}/${n}.png`;
     return {
       name: name || '我', level: lv || 1, emoji: '🧒', moves,
       img: {
         idle: p('player'), pose: p('player-pose'), hurt: p('player-hurt'), win: p('player-win'),
         attack: ['player-attack', 'player-kick', 'player-fire', 'player-fire2', 'player-punch', 'player-slash', 'player-spin'].map(p),
+        beam: p('player-beam'),
       },
+      special: { name: hero.beam, color: hero.color },
     };
   }
 
@@ -211,9 +231,11 @@
       const name = input.value.trim().replace(/\s+/g, ' ');
       if (!name) { el.querySelector('.lv-err').textContent = '請先輸入名字喔！'; input.focus(); return; }
       setCurrent(o.gameId, name);
-      o.onStart(name);
+      pick(name);
     };
-    el.querySelectorAll('.lv-player').forEach(b => b.onclick = () => { setCurrent(o.gameId, b.dataset.name); o.onStart(b.dataset.name); });
+    // 名字確定後先選角色，選好才進關卡地圖
+    const pick = name => renderSelect(el, { name, base: o.base, onDone: () => o.onStart(name), onBack: () => renderStart(el, o) });
+    el.querySelectorAll('.lv-player').forEach(b => b.onclick = () => { setCurrent(o.gameId, b.dataset.name); pick(b.dataset.name); });
     el.querySelector('[data-act="board"]').onclick = o.onBoard;
     el.querySelector('[data-act="voice"]').onclick = () => window.Sound && Sound.openPicker();
     cloudBar(el.querySelector('[data-cloud]'));
@@ -223,6 +245,61 @@
    * 關卡地圖（依設計總覽 03 選擇關卡：星空背景、圓形關卡按鈕、魔王關紅色發光）
    * o.gameId, o.name, o.title, o.base, o.levels:[{ title, desc }], o.onPick(index), o.onSwitch(), o.onBoard()
    */
+  /**
+   * 選擇角色：左右滑動（或按箭頭）選奧特曼，按確定後記在這位玩家身上
+   * o.name, o.base, o.onDone(), o.onBack()
+   */
+  function renderSelect(el, o) {
+    const start = HEROES.indexOf(heroOf(o.name));
+    el.innerHTML = `
+      <div class="lv lv-select" style="background-image:linear-gradient(rgba(20,10,40,.25), rgba(20,10,40,.6)), url('${scene(1, o.base)}')">
+        <div class="lv-bar">
+          <button class="ui-round" data-act="back" aria-label="返回">←</button>
+          <div class="lv-ribbon">選擇角色</div>
+          <span class="lv-bar-r"><button class="ui-round" data-music-toggle aria-label="背景音樂">🎵</button></span>
+        </div>
+        <div class="hs-stage">
+          <button class="hs-arrow left" data-act="prev" aria-label="上一位">‹</button>
+          <div class="hs-track">
+            ${HEROES.map(h => `<div class="hs-card" style="--c:${h.color}">
+              <img src="${o.base}assets/heroes/${h.id}/player-pose.png" alt="" draggable="false">
+              <div class="hs-name">${h.name}</div>
+              <div class="hs-beam no-zy">必殺技：${h.beam}</div>
+            </div>`).join('')}
+          </div>
+          <button class="hs-arrow right" data-act="next" aria-label="下一位">›</button>
+        </div>
+        <div class="hs-dots">${HEROES.map(() => '<i></i>').join('')}</div>
+        <button class="btn btn-gold hs-go" data-act="go">就決定是你了！</button>
+      </div>`;
+    zy(el.querySelector('.lv-ribbon'));
+    el.querySelectorAll('.hs-name, .hs-go').forEach(zy);
+    window.Music && Music.play('title');
+    const track = el.querySelector('.hs-track'), cards = [...track.children], dots = [...el.querySelectorAll('.hs-dots i')];
+    let now = start, spoken = start, target = start;   // target：箭頭要去的位置（連按時才不會少跳）
+    const paint = () => { cards.forEach((c, i) => c.classList.toggle('on', i === now)); dots.forEach((d, i) => d.classList.toggle('on', i === now)); };
+    const center = c => c.offsetLeft + c.offsetWidth / 2 - track.clientWidth / 2;
+    const go = (i, smooth = true) => track.scrollTo({ left: center(cards[i]), behavior: smooth ? 'smooth' : 'auto' });
+    let timer;
+    track.addEventListener('scroll', () => {
+      const mid = track.scrollLeft;
+      now = cards.reduce((b, c, i) => Math.abs(center(c) - mid) < Math.abs(center(cards[b]) - mid) ? i : b, 0);
+      paint();
+      clearTimeout(timer);   // 停下來才唸名字，滑動途中不要一直唸
+      timer = setTimeout(() => { target = now; if (now !== spoken) { spoken = now; window.Sound && Sound.say(HEROES[now].name); } }, 260);
+    }, { passive: true });
+    paint(); requestAnimationFrame(() => go(start, false));
+    el.querySelector('.lv-select').onclick = e => {
+      const c = e.target.closest('.hs-card');
+      if (c) return go(target = cards.indexOf(c));
+      const act = e.target.closest('[data-act]')?.dataset.act;
+      if (act === 'prev') go(target = (target + HEROES.length - 1) % HEROES.length);
+      else if (act === 'next') go(target = (target + 1) % HEROES.length);
+      else if (act === 'back') o.onBack();
+      else if (act === 'go') { setHero(o.name, HEROES[now].id); o.onDone(); }
+    };
+  }
+
   function renderMap(el, o) {
     const p = getPlayer(o.gameId, o.name);
     const total = o.levels.length;
@@ -247,14 +324,14 @@
           <div class="lv-ribbon">選擇關卡</div>
           <span class="lv-bar-r"><button class="ui-round" data-music-toggle aria-label="背景音樂">🎵</button><button class="ui-round" data-act="board" aria-label="排行榜">🏆</button></span>
         </div>
-        <div class="lv-who">${o.title}　🧒 <b class="no-zy">${esc(p.name)}</b> Lv.${p.best + 1}　${lastText(p)}</div>
+        <div class="lv-who">${o.title}　🦸 ${heroOf(o.name).name}　<b class="no-zy">${esc(p.name)}</b> Lv.${p.best + 1}　${lastText(p)}</div>
         <div class="lv-path">
           <div class="lv-row">${o.levels.slice(0, half).map((lv, i) => node(lv, i)).join('<span class="lv-arrow">➜</span>')}</div>
           <div class="lv-turn">⤵</div>
           <div class="lv-row">${o.levels.slice(half).map((lv, i) => node(lv, i + half)).join('<span class="lv-arrow">➜</span>')}</div>
         </div>
         ${o.onReview ? `<button class="btn btn-orange lv-review" data-act="review">📝 錯題複習 <span data-review-n></span></button>` : ''}
-        <div class="lv-tools"><span class="lv-cloud" data-cloud></span></div>
+        <div class="lv-tools no-zy"><button class="lv-voice" type="button" data-act="hero">🦸 換角色</button><span class="lv-cloud" data-cloud></span></div>
         <button class="lv-unlock" data-act="unlock">家長：幫 <span class="no-zy">${esc(p.name)}</span> 解鎖全部關卡</button>
       </div>`;
     zy(el.querySelector('.lv-ribbon'));
@@ -274,6 +351,7 @@
       if (n && !n.disabled) return o.onPick(+n.dataset.i);
       const act = e.target.closest('[data-act]')?.dataset.act;
       if (act === 'switch') o.onSwitch();
+      else if (act === 'hero') renderSelect(el, { name: o.name, base: o.base, onDone: () => renderMap(el, o), onBack: () => renderMap(el, o) });
       else if (act === 'review') o.onReview();
       else if (act === 'board') o.onBoard();
       else if (act === 'unlock' && twoStep(e.target.closest('[data-act]'), `確定要幫 ${p.name} 解鎖全部 ${total} 關？再按一次`)) {
@@ -357,6 +435,6 @@
     return true;
   }
 
-  window.Levels = { recordWrong, startReview, cloudBar, MONSTERS, TIMING, SCENES, scene, monster, player, current, setCurrent, getPlayer, recordResult, ranking, boardHtml,
+  window.Levels = { HEROES, heroOf, recordWrong, startReview, cloudBar, MONSTERS, TIMING, SCENES, scene, monster, player, current, setCurrent, getPlayer, recordResult, ranking, boardHtml,
                     renderStart, renderMap, renderBoard, totalStars };
 })();

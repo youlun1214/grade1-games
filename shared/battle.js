@@ -17,6 +17,11 @@
     timedPower: 5,                 // 拖太久：每次攻擊力
     chargeTime: 2,                 // 攻擊前蓄力提示秒數
     wrongChargeTime: .8,           // 答錯時的蓄力秒數
+    specialCombo: 3,               // 連續幾次暴擊發動必殺技
+    specialBonus: 10,              // 必殺技：在暴擊的傷害上再多扣幾滴血
+    wrongHeal: 10,                 // 答錯：怪獸回血
+    wrongHealEvery: 3,             // 每累積答錯幾題……
+    wrongHealBonus: 20,            // ……再多回幾滴血
   };
 
   const CHEERS = ['打中了！', '好厲害！', '太棒了！', '漂亮！'];
@@ -139,21 +144,26 @@
 
     // ===== 狀態 =====
     let mHp, pHp, q, round, elapsed, nextAttackAt, state, last, clock, timers, stats;
+    let critCombo = 0;   // 目前連續幾次暴擊
     // state：story（故事對話）、asking（作答中，會計時）、busy（動畫中）、over（結束）
 
     function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
-    function clearAll() { timers.forEach(clearTimeout); timers = []; clearInterval(clock); }
+    function clearAll() { timers.forEach(clearTimeout); timers = []; clearInterval(clock); removeSpecial(); }
     function log(text, kind) { logEl.textContent = text; logEl.className = 'bt-log' + (kind ? ' ' + kind : ''); }
 
     // 背景音樂：第 1～5 關戰鬥曲、第 6～9 關快一點的戰鬥曲、第 10 關魔王曲
     const battleSong = level.no >= 10 ? 'boss' : level.no >= 6 ? 'battle2' : 'battle';
+
+    // 必殺技要用的圖先載入，動畫時才不會慢半拍
+    if (ply.img && ply.img.beam) [ply.img.beam, [].concat(mon.img?.idle || [])[0], [].concat(mon.img?.hurt || [])[0]].forEach(src => { if (src) new Image().src = src; });
 
     function reset(withStory) {
       if (timers) clearAll();
       window.Music && Music.play(battleSong);
       timers = [];
       mHp = R.monsterHp; pHp = R.playerHp; q = null; round = 0;
-      stats = { correct: 0, crit: 0, wrong: 0, hitByTime: 0 };
+      stats = { correct: 0, crit: 0, wrong: 0, hitByTime: 0, special: 0 };
+      critCombo = 0;
       monster.set('idle'); player.set('idle');
       mEl.className = 'bt-sprite bt-m'; pEl.className = 'bt-sprite bt-p';
       overEl.className = 'bt-over';
@@ -254,9 +264,9 @@
       later(() => el.classList.remove(cls), ms);
     }
 
-    function floatDmg(stage, text, crit) {
+    function floatDmg(stage, text, crit, cls) {
       const d = document.createElement('div');
-      d.className = 'bt-dmg' + (crit ? ' crit' : '');
+      d.className = 'bt-dmg' + (crit ? ' crit' : '') + (cls ? ' ' + cls : '');
       d.textContent = text;
       $(`[data-stage="${stage}"]`).appendChild(d);
       later(() => d.remove(), 1200);
@@ -291,8 +301,15 @@
       if (String(value) === String(q.ans)) {
         const tier = R.attackTiers.find(t => elapsed <= t.within);
         stats.correct++; if (tier.crit) stats.crit++;
+        critCombo = tier.crit ? critCombo + 1 : 0;
         opts.onCorrect && opts.onCorrect(q);
         btn.classList.add('right');
+        // 連續暴擊夠多次：發動必殺技
+        if (critCombo >= R.specialCombo && ply.special && ply.img && ply.img.beam) {
+          critCombo = 0; stats.special++;
+          log(`連續 ${R.specialCombo} 次暴擊！必殺技！`, 'good');
+          return showSpecial(tier.power + R.specialBonus);
+        }
         const move = pickOne(ply.moves || ['衝撞']);
         log(tier.crit ? `你使出了 ${move}！⚡ 暴擊！` : `你使出了 ${move}！${pickOne(CHEERS)}`, 'good');
         Sound.beep(tier.crit ? [660, 880, 1100, 1320] : [660, 880, 1100]);
@@ -311,8 +328,10 @@
           later(nextQ, 1300);
         }, 250);
       } else {
-        // 答錯：顯示正確答案，怪獸蓄力後攻擊，再換新題目
+        // 答錯：顯示正確答案，怪獸回血、蓄力後攻擊，再換新題目
         stats.wrong++;
+        critCombo = 0;
+        healMonster();
         // 通知遊戲：記到答錯清單（choice 是孩子選的那個選項）
         opts.onWrong && opts.onWrong(q, value, choiceText(btn));
         btn.classList.add('wrong');
@@ -327,6 +346,74 @@
           later(() => { if (state !== 'over') nextQ(); }, 1600);
         }, R.wrongChargeTime * 1000);
       }
+    }
+
+    // 答錯時怪獸回血；累積答錯到一定題數再多回一些（最多回到滿血）
+    function healMonster() {
+      const add = R.wrongHeal + (stats.wrong % R.wrongHealEvery === 0 ? R.wrongHealBonus : 0);
+      const real = Math.min(add, R.monsterHp - mHp);
+      if (real <= 0) return;
+      mHp += real;
+      floatDmg('m', `+${real}`, false, 'heal');
+      flash(mEl, 'healing', 600);
+      drawHp();
+    }
+
+    // ===== 必殺技動畫：全螢幕特寫，英雄用選好的角色、怪獸和場景用這一關的 =====
+    function removeSpecial() { document.querySelectorAll('.sp').forEach(e => e.remove()); }
+    function showSpecial(power) {
+      const sp = ply.special, c = sp.color;
+      const el = document.createElement('div');
+      el.className = 'sp';
+      el.style.setProperty('--c', c);
+      if (opts.background) el.style.backgroundImage = `url("${opts.background}")`;
+      el.innerHTML = `
+        <div class="sp-dim"></div><div class="sp-lines"></div>
+        <div class="sp-title"><b>必殺技</b><span class="sp-name">${esc(sp.name)}</span></div>
+        <img class="sp-mon" src="${[].concat(mon.img.idle)[0]}" alt="">
+        <img class="sp-hero" src="${ply.img.beam}" alt="">
+        <div class="sp-charge"><i></i><i></i><i></i></div>
+        <div class="sp-beam"><u class="b1"></u><u class="b2"></u><u class="b3"></u><u class="b4"></u><s></s><s></s><s></s><s></s></div>
+        <div class="sp-muzzle"></div>
+        <div class="sp-burst">${Array.from({ length: 16 }, (_, i) => `<em style="--r:${i * 22.5}deg;--d:${(i * 37) % 140}ms"></em>`).join('')}</div>
+        <div class="sp-white"></div>`;
+      document.body.appendChild(el);
+      zy(el.querySelector('.sp-title'));
+      const heroEl = el.querySelector('.sp-hero'), monEl = el.querySelector('.sp-mon');
+      // 光波從手到怪獸：依實際位置算長度和角度（手機直向、平板橫向都對得上）
+      const aim = () => {
+        // 用 offset 位置：不受滑入動畫影響；圖還沒載入時寬度先當成和高度一樣
+        const hH = heroEl.offsetHeight, hW = heroEl.offsetWidth || hH, mH = monEl.offsetHeight, mW = monEl.offsetWidth || mH;
+        const x0 = heroEl.offsetLeft + hW * .78, y0 = heroEl.offsetTop + hH * .22;
+        const x1 = (monEl.offsetWidth ? monEl.offsetLeft : el.clientWidth * .99 - mW) + mW * .4, y1 = monEl.offsetTop + mH * .55;
+        el.style.setProperty('--x0', x0 + 'px'); el.style.setProperty('--y0', y0 + 'px');
+        el.style.setProperty('--x1', x1 + 'px'); el.style.setProperty('--y1', y1 + 'px');
+        el.style.setProperty('--len', Math.hypot(x1 - x0, y1 - y0) + 'px');
+        el.style.setProperty('--a', Math.atan2(y1 - y0, x1 - x0) + 'rad');
+      };
+      requestAnimationFrame(() => { el.classList.add('in'); });
+      Sound.say(`必殺技！${sp.name}！`);
+      Sound.beep([220, 262, 330, 392, 494, 587, 698, 880], .1, 'sawtooth');
+      later(() => { aim(); el.classList.add('charge'); }, 900);                 // 集氣
+      later(() => {                                                             // 發射
+        aim(); el.classList.add('fire');
+        Sound.beep([1760, 1568, 1760, 1568, 1760, 1568, 1319, 1175], .08, 'sawtooth');
+      }, 1500);
+      later(() => {                                                             // 命中
+        el.classList.add('hit');
+        monEl.src = [].concat(mon.img.hurt || mon.img.idle)[0];
+        Sound.beep([110, 82, 65, 55], .16, 'square');
+        mHp -= power; monster.set('hurt'); drawHp();
+      }, 1950);
+      later(() => { el.classList.add('out'); }, 3000);
+      later(() => {
+        removeSpecial();
+        flash(mEl, 'hit', 450);
+        floatDmg('m', `-${power}`, true);
+        if (mHp <= 0) return win();
+        later(() => { monster.set('idle'); player.set('idle'); }, 700);
+        later(nextQ, 1300);
+      }, 3300);
     }
 
     // ===== 勝負 =====
@@ -346,7 +433,7 @@
           <div class="bt-over-stars">${starsHtml(stars)}</div>
           ${heroImg('win')}
           <div class="logo-text bt-over-title">過關！</div>
-          <p>打倒 ${esc(mon.name)}！答對 ${stats.correct} 題、暴擊 ${stats.crit} 次，得到 <b>${result.score}</b> 分</p>
+          <p>打倒 ${esc(mon.name)}！答對 ${stats.correct} 題、暴擊 ${stats.crit} 次${stats.special ? `、必殺技 ${stats.special} 次` : ''}，得到 <b>${result.score}</b> 分</p>
           ${opts.isLast && !opts.hasNext ? '<p class="bt-final">🎉 全部關卡都破關了！</p>' : ''}
           <div class="bt-over-btns">
             ${opts.hasNext ? '<button class="btn btn-gold" data-act="next">下一關 ▶</button>' : ''}
@@ -396,7 +483,7 @@
     // 算分數：每題答對 10 分＋暴擊 5 分＋過關時剩下的血量
     function finish(won, stars) {
       const result = { won, stars, hp: Math.max(0, pHp), correct: stats.correct, crit: stats.crit, wrong: stats.wrong,
-                       score: stats.correct * 10 + stats.crit * 5 + (won ? Math.max(0, pHp) : 0) };
+                       score: stats.correct * 10 + stats.crit * 5 + stats.special * 10 + (won ? Math.max(0, pHp) : 0) };
       opts.onEnd && opts.onEnd(result);
       return result;
     }

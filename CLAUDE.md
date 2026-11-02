@@ -31,7 +31,8 @@
 - 題目難度依小一課程進度，題庫與遊戲邏輯分開，方便之後加題
 
 ## 圖片庫與對戰規則
-- 共用圖片放 `assets/`（`monsters/`、`player/`、`backgrounds/`、`ui/`），規格見 `assets/README.md`
+- 共用圖片放 `assets/`（`monsters/`、`player/`、`heroes/`、`backgrounds/`、`ui/`），規格見 `assets/README.md`
+- 8 位可選的奧特曼在 `assets/heroes/<id>/`（12 式動作＋必殺技 `player-beam.png`），清單與必殺技名稱在 `shared/levels.js` 的 `HEROES`；`assets/player/` 是經典奧特曼（首頁、開始畫面、10 以內加減用）。輸入名字後選角色（左右滑動），關卡地圖可換角色，每位玩家記一個角色，三個遊戲共用
 - 兒子的真實照片只放 `assets/_private/`（已 gitignore，不上 GitHub）；遊戲裡只用 AI 畫的卡通版角色
 - 對戰模式規則（血量、攻擊力、怪獸反擊）見 `docs/battle-rules.md`
 - 畫面依 ChatGPT 產的〈小一打怪獸 遊戲設計總覽〉（原圖在 `assets/_source/`，不上傳）：首頁開始畫面＋選擇遊戲、選擇關卡地圖、關卡故事對話、戰鬥、過關、失敗；共用按鈕／標題字／星空背景在 `shared/ui.css`

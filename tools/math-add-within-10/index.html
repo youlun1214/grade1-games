@@ -245,7 +245,8 @@ function startBattle(m) {
       pose: '../../assets/player/player-pose.png',
       win: '../../assets/player/player-win.png',
       attack: ['attack', 'kick', 'fire', 'fire2', 'punch', 'slash', 'spin'].map(n => `../../assets/player/player-${n}.png`),
-      hurt: '../../assets/player/player-hurt.png' } },
+      hurt: '../../assets/player/player-hurt.png', beam: '../../assets/player/player-beam.png' },
+      special: { name: '斯派修姆光線', color: '#6fd2ff' } },
     background: '../../assets/backgrounds/scene-04.jpg',   // 雷德王的山谷場景
     onExit: () => { show('start'); window.Music && Music.play('title'); },
   });

@@ -147,3 +147,81 @@
 .bt-over-btns { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; margin-top:8px; }
 .bt-over-btns .btn { min-width:150px; }
 .bt-over-exit { margin-top:10px; font-size:1.1rem; padding:8px 22px; }
+
+/* ===== 答錯：怪獸回血 ===== */
+.bt-dmg.heal { color:#3fe36a; }
+.bt-m.healing { filter:drop-shadow(0 0 16px #3fe36a) drop-shadow(0 0 6px #3fe36a) brightness(1.15); }
+
+/* ===== 必殺技：全螢幕特寫（--c 是角色的光波顏色）===== */
+.sp { position:fixed; inset:0; z-index:9000; overflow:hidden; background:#080c24 center/cover no-repeat; opacity:0; transition:opacity .22s; font-family:var(--font); }
+.sp.in { opacity:1; }
+.sp.out { opacity:0; transition:opacity .3s; }
+.sp.hit { animation:sp-quake .5s linear 2; }
+.sp-dim { position:absolute; inset:0; background:radial-gradient(ellipse at 40% 55%, rgba(8,12,36,.25), rgba(8,12,36,.92)); }
+.sp.charge .sp-dim, .sp.fire .sp-dim { background:radial-gradient(ellipse at 40% 55%, rgba(8,12,36,.5), rgba(4,6,20,.97)); transition:background .3s; }
+.sp-lines { position:absolute; left:50%; top:50%; width:220vmax; height:220vmax; margin:-110vmax 0 0 -110vmax; opacity:0;
+            background:repeating-conic-gradient(from 0deg, transparent 0 7deg, color-mix(in srgb, var(--c) 45%, transparent) 7deg 8deg, transparent 8deg 13deg, rgba(255,255,255,.2) 13deg 13.5deg); animation:sp-spin 6s linear infinite; }
+.sp.charge .sp-lines { opacity:.55; transition:opacity .3s; }
+
+.sp-title { position:absolute; left:0; right:0; top:max(14px, 4vh); z-index:6; text-align:center; color:#fff; animation:sp-title .45s cubic-bezier(.2,1.6,.4,1) both; }
+.sp-title b { display:block; font-size:clamp(2.6rem,12vw,4.6rem); font-weight:900; line-height:1.1; color:#ffe066; -webkit-text-stroke:2px #7a2400; paint-order:stroke fill; text-shadow:0 0 22px var(--c), 0 4px 0 rgba(0,0,0,.5); }
+.sp-name { display:inline-block; margin-top:4px; padding:3px 18px; border-radius:999px; font-size:clamp(1.3rem,6vw,2.1rem); font-weight:900; background:rgba(0,0,0,.45); border:2px solid var(--c); box-shadow:0 0 16px var(--c); }
+
+.sp-hero { position:absolute; left:2vw; bottom:3vh; height:min(40vh, 72vw); z-index:4; filter:drop-shadow(0 0 16px var(--c)) drop-shadow(0 8px 12px rgba(0,0,0,.6)); animation:sp-hero .4s cubic-bezier(.2,1.4,.4,1) both; }
+.sp-mon { position:absolute; right:1vw; top:19vh; height:min(34vh, 58vw); z-index:3; filter:drop-shadow(0 8px 12px rgba(0,0,0,.6)); animation:sp-mon .4s ease-out both; }
+.sp.hit .sp-mon { animation:sp-mon-hit .22s steps(2) infinite; filter:brightness(2.2) saturate(.4) drop-shadow(0 0 24px #fff); }
+
+/* 集氣：光環往手上收 */
+.sp-charge { position:absolute; left:var(--x0, 40vw); top:var(--y0, 50vh); z-index:5; opacity:0; }
+.sp.charge .sp-charge { opacity:1; }
+.sp.fire .sp-charge { opacity:0; }
+.sp-charge i { position:absolute; left:-90px; top:-90px; width:180px; height:180px; border-radius:50%; border:4px solid #fff; box-shadow:0 0 18px var(--c), inset 0 0 18px var(--c); animation:sp-gather .5s ease-in infinite; }
+.sp-charge i:nth-child(2) { animation-delay:.16s; } .sp-charge i:nth-child(3) { animation-delay:.33s; }
+
+/* 光波：外光、中層、白色光芯、流動的能量、沿著光束跑的光環 */
+.sp-beam { position:absolute; left:var(--x0, 40vw); top:var(--y0, 50vh); width:var(--len, 50vw); height:clamp(58px,15vmin,116px); margin-top:calc(clamp(58px,15vmin,116px) / -2); z-index:5;
+           transform-origin:0 50%; transform:rotate(var(--a, 0rad)) scaleX(0); opacity:0; }
+.sp.fire .sp-beam { opacity:1; animation:sp-shoot .42s cubic-bezier(.3,.9,.3,1) forwards; }
+.sp-beam u { position:absolute; left:0; right:0; display:block; text-decoration:none; }
+.sp-beam .b1 { top:-70%; bottom:-70%; background:var(--c); opacity:.7; filter:blur(16px); border-radius:50% 0 0 50%; animation:sp-pulse .09s linear infinite alternate; }
+.sp-beam .b2 { top:0; bottom:0; background:linear-gradient(180deg, transparent, var(--c) 22%, #fff 50%, var(--c) 78%, transparent); filter:blur(2px); border-radius:30px 0 0 30px; animation:sp-pulse .07s linear infinite alternate-reverse; }
+.sp-beam .b3 { top:32%; bottom:32%; background:#fff; border-radius:20px; box-shadow:0 0 14px #fff, 0 0 30px var(--c); }
+.sp-beam .b4 { top:10%; bottom:10%; opacity:.9; mix-blend-mode:screen; background:repeating-linear-gradient(100deg, transparent 0 34px, rgba(255,255,255,.95) 34px 44px, transparent 44px 70px, color-mix(in srgb, var(--c) 70%, #fff) 70px 76px, transparent 76px 110px); background-size:220px 100%; animation:sp-flow .22s linear infinite; }
+.sp-beam s { position:absolute; left:0; top:-60%; width:34px; height:220%; border:4px solid #fff; border-radius:50%; box-shadow:0 0 12px var(--c), inset 0 0 8px var(--c); animation:sp-ring .42s linear infinite; }
+.sp-beam s:nth-of-type(2) { animation-delay:.1s; } .sp-beam s:nth-of-type(3) { animation-delay:.21s; } .sp-beam s:nth-of-type(4) { animation-delay:.31s; }
+
+/* 手上的星芒 */
+.sp-muzzle { position:absolute; left:var(--x0, 40vw); top:var(--y0, 50vh); width:190px; height:190px; margin:-95px 0 0 -95px; z-index:6; opacity:0; border-radius:50%;
+             background:radial-gradient(circle, #fff 0 14%, transparent 42%), repeating-conic-gradient(#fff 0 6deg, transparent 6deg 30deg); -webkit-mask:radial-gradient(circle, #000 18%, transparent 68%); mask:radial-gradient(circle, #000 18%, transparent 68%); filter:drop-shadow(0 0 16px var(--c)); }
+.sp.fire .sp-muzzle { opacity:1; animation:sp-spin .5s linear infinite; }
+
+/* 命中：放射光＋火花 */
+.sp-burst { position:absolute; left:var(--x1, 75vw); top:var(--y1, 35vh); z-index:6; opacity:0; }
+.sp.hit .sp-burst { opacity:1; }
+.sp-burst::before { content:""; position:absolute; left:-46vmin; top:-46vmin; width:92vmin; height:92vmin; border-radius:50%;
+                    background:radial-gradient(circle, #fff 0 16%, rgba(255,255,255,.75) 24%, transparent 62%), repeating-conic-gradient(rgba(255,255,255,.95) 0 5deg, transparent 5deg 18deg, var(--c) 18deg 22deg, transparent 22deg 40deg);
+                    -webkit-mask:radial-gradient(circle, #000 20%, transparent 70%); mask:radial-gradient(circle, #000 20%, transparent 70%); animation:sp-blast .9s ease-out both, sp-spin 1.4s linear infinite; }
+.sp-burst::after { content:""; position:absolute; left:-30vmin; top:-30vmin; width:60vmin; height:60vmin; border-radius:50%; border:8px solid #fff; box-shadow:0 0 30px var(--c); animation:sp-wave .7s ease-out both; }
+.sp-burst em { position:absolute; left:-4px; top:-30px; width:8px; height:60px; border-radius:6px; background:linear-gradient(#fff, var(--c)); box-shadow:0 0 10px var(--c); transform:rotate(var(--r)) translateY(0); opacity:0; animation:sp-spark .75s ease-out var(--d) both; }
+
+.sp-white { position:absolute; inset:0; z-index:8; background:#fff; opacity:0; pointer-events:none; }
+.sp.fire .sp-white { animation:sp-white .22s ease-out both; }
+.sp.hit .sp-white { animation:sp-white2 .45s ease-out both; }
+
+@keyframes sp-spin { to { rotate:360deg; } }
+@keyframes sp-title { from { transform:scale(2.4); opacity:0; } to { transform:scale(1); opacity:1; } }
+@keyframes sp-hero { from { transform:translateX(-70%); } to { transform:translateX(0); } }
+@keyframes sp-mon { from { transform:translateX(60%); } to { transform:translateX(0); } }
+@keyframes sp-mon-hit { from { transform:translate(-8px, 5px); } to { transform:translate(10px, -6px); } }
+@keyframes sp-gather { from { transform:scale(1.5); opacity:0; } 50% { opacity:1; } to { transform:scale(.1); opacity:0; } }
+@keyframes sp-shoot { to { transform:rotate(var(--a, 0rad)) scaleX(1); } }
+@keyframes sp-pulse { from { transform:scaleY(.82); } to { transform:scaleY(1.2); } }
+@keyframes sp-flow { to { background-position:-220px 0; } }
+@keyframes sp-ring { from { left:0; opacity:1; transform:scale(.7); } to { left:100%; opacity:.5; transform:scale(1.25); } }
+@keyframes sp-blast { from { transform:scale(.1); opacity:1; } 60% { opacity:1; } to { transform:scale(1.15); opacity:.75; } }
+@keyframes sp-wave { from { transform:scale(.1); opacity:1; } to { transform:scale(1.5); opacity:0; } }
+@keyframes sp-spark { from { opacity:1; transform:rotate(var(--r)) translateY(-30px); } to { opacity:0; transform:rotate(var(--r)) translateY(-44vmin); } }
+@keyframes sp-white { from { opacity:.85; } to { opacity:0; } }
+@keyframes sp-white2 { from { opacity:1; } to { opacity:0; } }
+@keyframes sp-quake { 0%,100% { transform:translate(0,0); } 20% { transform:translate(-14px,8px); } 40% { transform:translate(12px,-10px); } 60% { transform:translate(-9px,-6px); } 80% { transform:translate(8px,7px); } }
+

@@ -93,3 +93,23 @@
 .lv-cloud .lv-link { color:#cfe0ff; font-size:.95rem; text-decoration:underline; }
 .lv-cloud-off { opacity:.8; font-size:.9rem; }
 .lv-review { margin-top:14px; font-size:1.4rem; }
+
+/* ===== 選擇角色：左右滑動 ===== */
+.lv-select { background-color:#141a3a; overflow:hidden; }
+.hs-stage { position:relative; width:100%; max-width:640px; flex:1; display:flex; align-items:center; min-height:0; margin-top:6px; }
+.hs-track { display:flex; align-items:center; gap:4vw; width:100%; overflow-x:auto; scroll-snap-type:x mandatory; scrollbar-width:none; padding:14px 19%; -webkit-overflow-scrolling:touch; }
+.hs-track::-webkit-scrollbar { display:none; }
+.hs-card { flex:0 0 100%; scroll-snap-align:center; display:flex; flex-direction:column; align-items:center; gap:4px; padding:16px 8px 14px; border-radius:24px; cursor:pointer; color:#fff;
+           background:linear-gradient(rgba(255,255,255,.14), rgba(0,0,0,.28)); border:4px solid rgba(255,255,255,.35); opacity:.5; transform:scale(.86); transition:transform .22s, opacity .22s, border-color .22s, box-shadow .22s; }
+.hs-card.on { opacity:1; transform:scale(1); border-color:var(--c); box-shadow:0 0 26px var(--c); }
+.hs-card img { height:min(40vh, 300px); max-width:100%; object-fit:contain; filter:drop-shadow(0 6px 10px rgba(0,0,0,.5)); }
+.hs-name { font-size:clamp(1.2rem,5.2vw,1.8rem); font-weight:900; white-space:nowrap; text-shadow:0 2px 4px rgba(0,0,0,.7); }
+.hs-beam { font-size:clamp(.95rem,4vw,1.15rem); font-weight:700; color:#ffe066; text-shadow:0 2px 4px rgba(0,0,0,.7); }
+.hs-arrow { position:absolute; top:50%; transform:translateY(-50%); z-index:2; width:46px; height:64px; border-radius:14px; border:2px solid rgba(255,255,255,.75); background:rgba(16,24,56,.7); color:#fff; font-size:2.4rem; line-height:1; cursor:pointer; }
+.hs-arrow.left { left:0; } .hs-arrow.right { right:0; }
+.hs-dots { display:flex; gap:8px; margin:6px 0 10px; }
+.hs-dots i { width:11px; height:11px; border-radius:50%; background:rgba(255,255,255,.4); }
+.hs-dots i.on { background:#ffe066; box-shadow:0 0 8px #ffe066; }
+.hs-go { width:min(100%, 420px); white-space:nowrap; }
+.lv-select .lv-ribbon { white-space:nowrap; font-size:clamp(1.2rem,5.4vw,1.7rem); }
+

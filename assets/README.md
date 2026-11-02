@@ -86,3 +86,8 @@
 
 ## 兒子的真實照片放哪？
 放在 `assets/_private/`。這個資料夾**已設定不會上傳 GitHub**，只存在 Google 雲端硬碟，用來給 AI 當參考、畫出卡通版角色。
+
+### 🦸 可選角色（`heroes/<id>/`）：8 位奧特曼
+- `classic` 經典、`zero` 賽羅、`tiga` 迪迦、`taiga` 泰迦、`geed` 捷德、`z` 澤塔、`trigger` 特利迦、`belial` 貝利亞
+- 每位 13 張：12 式動作（檔名和 `player/` 一樣）＋ `player-beam.png` 必殺技發射姿勢
+- 動作圖從 `_source/遊戲選角清單/` 用 `_source/cut_heroes.py` 裁切；必殺技和部分勝利圖是 AI 畫在純綠背景再去背
