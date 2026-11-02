@@ -225,3 +225,21 @@
 @keyframes sp-white2 { from { opacity:1; } to { opacity:0; } }
 @keyframes sp-quake { 0%,100% { transform:translate(0,0); } 20% { transform:translate(-14px,8px); } 40% { transform:translate(12px,-10px); } 60% { transform:translate(-9px,-6px); } 80% { transform:translate(8px,7px); } }
 
+/* ===== 題目比較大時：戰場縮小（--fh 由 fitScreen 算出來）===== */
+/* 兩個資訊框並排在上面，角色站在下面，才不會互相擋住 */
+.bt.compact .bt-field { min-height:0; grid-template-rows:auto auto 1fr; }
+.bt.compact .bt-info-m { grid-area:2/1; }
+.bt.compact .bt-info-p { grid-area:2/2; align-self:start; margin-bottom:2px; }
+.bt.compact .bt-spot-p { grid-area:3/1; }
+.bt.compact .bt-spot-m { grid-area:3/2; }
+.bt.compact .bt-m, .bt.compact .bt-p { height:min(24vh, max(58px, calc(var(--fh) - 100px))); font-size:min(13vh, max(44px, calc(var(--fh) - 120px))); }
+.bt.compact .ui-round { width:34px; height:34px; font-size:1rem; }
+.bt.compact .bt-hud { padding:4px 8px 0; }
+.bt.compact .bt-round { font-size:.9rem; padding:2px 10px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bt.compact .bt-info { margin:2px 6px; padding:3px 8px 4px; }
+.bt.compact .bt-info-name { font-size:.85rem; }
+.bt.compact .bt-hp { margin-top:1px; }
+.bt.compact .bt-bar { height:9px; }
+.bt.compact .bt-num { display:none; }
+.bt.compact .bt-choices button { min-height:58px; }
+

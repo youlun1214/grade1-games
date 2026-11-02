@@ -15,6 +15,10 @@
     羊: 'sheep', 鴨: 'duck', 牙: 'tooth', 燈: 'lantern', 鼓: 'drum', 蝦: 'shrimp', 象: 'elephant', 奶: 'milk', 花: 'flower', 雞: 'chicken',
     鞋: 'shoe', 火: 'fire', 腳: 'foot', 糖: 'candy', 眼: 'eye', 水: 'water', 龜: 'turtle', 錢: 'money', 門: 'door', 床: 'bed',
     肉: 'meat', 草: 'grass', 圓: 'circle', 心: 'heart', 蚊: 'mosquito', 雪: 'snowflake', 裙: 'skirt',
+    // 數學評量情境題用的圖示
+    機器人: 'robot', 泰迪熊: 'teddy', 氣球: 'balloon', 珍珠奶茶: 'bubbletea', 蛋塔: 'eggtart', 餅乾: 'cookie', 布丁: 'pudding', 禮物: 'gift',
+    水餃: 'dumpling', 小籠包: 'bao', 彈珠: 'marble', 紅蘿蔔: 'carrot', 白天鵝: 'swanwhite', 黑天鵝: 'swanblack', 蝴蝶: 'butterfly', 蜜蜂: 'bee',
+    蝸牛: 'snail', 向日葵: 'sunflower', 蒸籠: 'steamer', 籃子: 'basket', 棒棒糖: 'lollipop', 果汁: 'juice', 土司: 'toast', 圈圈: 'ring',
     杯: 'cup', 杯子: 'cup', 帽: 'cap', 帽子: 'cap', 跑: 'run', 學校: 'school', 球: 'ball', 時鐘: 'clock', 鐘: 'clock', 披薩: 'pizza', 魚: 'fish',
   };
 

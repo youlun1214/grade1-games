@@ -229,9 +229,23 @@
         choicesEl.appendChild(b);
       });
       zy(choicesEl);
+      fitScreen();
       state = 'asking';
       Sound.say(opts.speech(q));
     }
+
+    // 題目比較大時把戰場縮小，選項才不會跑到畫面外（手機瀏覽器的可視高度比螢幕矮很多）
+    function fitScreen() {
+      const field = $('.bt-field'), panel = $('.bt-panel'), H = window.innerHeight;
+      bt.classList.remove('compact'); field.style.height = ''; bt.style.removeProperty('--fh');
+      const need = () => panel.offsetHeight + 36;     // 36：戰場和答題框之外的上下留白
+      if (field.offsetHeight + need() <= H) return;
+      bt.classList.add('compact');
+      const h = Math.max(150, Math.min(field.offsetHeight, H - need()));
+      field.style.height = h + 'px'; bt.style.setProperty('--fh', h + 'px');
+    }
+    const onResize = () => { if (!bt.isConnected) return window.removeEventListener('resize', onResize); if (q) fitScreen(); };
+    window.addEventListener('resize', onResize);
 
     // ===== 計時：拖太久怪獸會攻擊 =====
     function tick() {
