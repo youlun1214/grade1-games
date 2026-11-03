@@ -20,11 +20,12 @@
 
   // ===== 每關的難度（規則說明見 docs/battle-rules.md）=====
   // 怪獸血量從 100 起跳，後面的關卡越來越多；怪獸第一次攻擊的秒數越來越短
+  // 2026-11：孩子常常用到必殺技，第 2 關以後每關的怪獸血量都再加 10
   const TIMING = [
-    { monsterHp: 100, firstAttackAt: 10 }, { monsterHp: 100, firstAttackAt: 10 }, { monsterHp: 100, firstAttackAt: 10 },
-    { monsterHp: 120, firstAttackAt: 10 }, { monsterHp: 120, firstAttackAt: 9 },  { monsterHp: 120, firstAttackAt: 9 },
-    { monsterHp: 140, firstAttackAt: 9 },  { monsterHp: 140, firstAttackAt: 8 },  { monsterHp: 140, firstAttackAt: 8 },
-    { monsterHp: 180, firstAttackAt: 7, attackEvery: 4 },
+    { monsterHp: 100, firstAttackAt: 10 }, { monsterHp: 110, firstAttackAt: 10 }, { monsterHp: 110, firstAttackAt: 10 },
+    { monsterHp: 130, firstAttackAt: 10 }, { monsterHp: 130, firstAttackAt: 9 },  { monsterHp: 130, firstAttackAt: 9 },
+    { monsterHp: 150, firstAttackAt: 9 },  { monsterHp: 150, firstAttackAt: 8 },  { monsterHp: 150, firstAttackAt: 8 },
+    { monsterHp: 190, firstAttackAt: 7, attackEvery: 4 },
   ];
 
   // 國字旁邊加注音（有載入 shared/zhuyin.js 才會加）

@@ -122,7 +122,7 @@
         try {
           await F.setDoc(ref(code), { game: S.o.gameId, level, seed: 0, state: 'wait', n: 0, updated: F.serverTimestamp(),
                                       host: me, guest: null, ah: {}, ag: {}, ph: 0, pg: 0, em: null });
-          S.code = code; S.role = 'host';
+          S.code = code; S.role = 'host'; S.screen = 'joining';
           return listen();
         } catch (e) { if (!/permission/i.test(e.code || e.message || '')) throw e; }   // 房號被別人用了 → 換一個
       }
@@ -136,10 +136,11 @@
       const r = await lookup(code);
       if (!r) { S.err = `找不到 ${code} 這個房間，請再確認一次房號`; return keypad(); }
       if (r.game !== S.o.gameId) { location.href = `${S.o.base}tools/${r.game}/?room=${code}`; return; }   // 是別的遊戲的房間：換到那個遊戲
-      if (r.host.uid === uid) { S.code = code; S.role = 'host'; return listen(); }
+      if (r.host.uid === uid) { S.code = code; S.role = 'host'; S.screen = 'joining'; return listen(); }
       if (r.guest && r.guest.uid !== uid) { S.err = '這個房間已經有兩個人了'; return keypad(); }
       if (!r.guest) await F.updateDoc(ref(code), { guest: { uid, name: S.o.name.slice(0, 20), hero: heroOf(S.o.name).id }, updated: F.serverTimestamp() });
       S.code = code; S.role = 'guest';
+      S.screen = 'joining';   // 離開數字鍵盤，收到房間資料就會畫等待室
       listen();
     } catch (e) { S.err = '加入失敗：' + (e.message || e); keypad(); }
   }
