@@ -243,7 +243,7 @@
 
   /**
    * 關卡地圖（依設計總覽 03 選擇關卡：星空背景、圓形關卡按鈕、魔王關紅色發光）
-   * o.gameId, o.name, o.title, o.base, o.levels:[{ title, desc }], o.onPick(index), o.onSwitch(), o.onBoard()
+   * o.gameId, o.name, o.title, o.base, o.levels:[{ title, desc }], o.onPick(index), o.onSwitch(), o.onBoard(), o.onReview()、o.onOnline()（可省略）
    */
   /**
    * 選擇角色：左右滑動（或按箭頭）選奧特曼，按確定後記在這位玩家身上
@@ -331,6 +331,7 @@
           <div class="lv-row">${o.levels.slice(half).map((lv, i) => node(lv, i + half)).join('<span class="lv-arrow">➜</span>')}</div>
         </div>
         ${o.onReview ? `<button class="btn btn-orange lv-review" data-act="review">📝 錯題複習 <span data-review-n></span></button>` : ''}
+        ${o.onOnline ? `<button class="btn btn-green lv-review" data-act="online">🌐 連線對戰</button>` : ''}
         <div class="lv-tools no-zy"><button class="lv-voice" type="button" data-act="hero">🦸 換角色</button><span class="lv-cloud" data-cloud></span></div>
         <button class="lv-unlock" data-act="unlock">家長：幫 <span class="no-zy">${esc(p.name)}</span> 解鎖全部關卡</button>
       </div>`;
@@ -353,6 +354,7 @@
       if (act === 'switch') o.onSwitch();
       else if (act === 'hero') renderSelect(el, { name: o.name, base: o.base, onDone: () => renderMap(el, o), onBack: () => renderMap(el, o) });
       else if (act === 'review') o.onReview();
+      else if (act === 'online') o.onOnline();
       else if (act === 'board') o.onBoard();
       else if (act === 'unlock' && twoStep(e.target.closest('[data-act]'), `確定要幫 ${p.name} 解鎖全部 ${total} 關？再按一次`)) {
         const pp = getPlayer(o.gameId, o.name); pp.unlocked = total; savePlayer(o.gameId, pp);

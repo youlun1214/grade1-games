@@ -262,3 +262,8 @@
   .bt-choices button { min-height:clamp(50px, 15vh, 110px); font-size:clamp(1.1rem, 5.5vh, 2.3rem); padding:2px 4px; min-width:0; }
 }
 
+/* ===== 連線對戰：對手（另一位奧特曼）面向左邊 ===== */
+.bt.versus .bt-m img { scale:-1 1; }
+.sp-mon.vs { scale:-1 1; }
+.bt-hud-r { display:flex; gap:8px; }
+

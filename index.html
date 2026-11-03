@@ -5,10 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>小一打怪獸</title>
 <link rel="stylesheet" href="shared/ui.css">
+<link rel="stylesheet" href="shared/online.css">
 <script src="shared/version.js"></script>
 <script src="shared/zhuyin.js"></script>
 <script src="shared/sound.js"></script>
 <script src="shared/music.js"></script>
+<script src="shared/firebase-config.js"></script>
+<script type="module" src="shared/cloud.js"></script>
+<script src="shared/online.js"></script>
 <style>
   /* 依「小一打怪獸 遊戲設計總覽」01 開始畫面、02 遊戲模式選擇 */
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -75,11 +79,19 @@
     </div>
   </div>
   <button class="more" data-go="modes">看全部遊戲 ▸</button>
+  <button class="more voice" data-go="online">🌐 連線對戰：輸入同學的房號</button>
   <button class="more voice" onclick="Sound.openPicker()">🔊 聲音設定</button>
   <a class="more voice" href="parent/">👨‍👩‍👦 家長專區（答錯清單）</a>
 </section>
 
 <!-- 02 遊戲模式選擇 -->
+<!-- 連線對戰：輸入房號，自動換到那個遊戲（開房間要在遊戲的關卡地圖按「🌐 連線對戰」）-->
+<section class="view bg-space" id="online">
+  <div class="bar"><button class="ui-round" data-go="title" aria-label="返回">←</button></div>
+  <div class="logo-text" style="font-size:clamp(2.2rem,9vw,3.2rem);margin:4px 0 10px">連線對戰</div>
+  <div id="online-pad" style="width:100%"></div>
+</section>
+
 <section class="view bg-space" id="modes">
   <div class="bar"><button class="ui-round" data-go="title" aria-label="返回">←</button></div>
   <div class="logo-text" style="font-size:clamp(2.4rem,10vw,3.6rem);margin:4px 0 18px">選擇遊戲</div>
@@ -107,6 +119,7 @@
 <script>
   document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => {
     document.querySelectorAll('.view').forEach(v => v.classList.toggle('on', v.id === b.dataset.go));
+    if (b.dataset.go === 'online') Online.joinFromHome(document.getElementById('online-pad'), '');
     window.scrollTo(0, 0);
   });
   // 首頁的背景音樂（點過畫面後才會開始，這是瀏覽器的規定）

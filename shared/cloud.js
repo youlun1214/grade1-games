@@ -30,7 +30,8 @@ async function init() {
     const a = app.initializeApp(window.FIREBASE_CONFIG);
     fb = { auth: auth.getAuth(a), db: fs.getFirestore(a), A: auth, F: fs };
     auth.onAuthStateChanged(fb.auth, async user => {
-      state.user = user ? { uid: user.uid, email: user.email, name: user.displayName } : null;
+      // 連線對戰用的匿名登入不算家長登入（答錯清單只存在家長的 Google 帳號）
+      state.user = user && !user.isAnonymous ? { uid: user.uid, email: user.email, name: user.displayName } : null;
       state.ready = true;
       if (user) await flushQueue();
       emit();
@@ -53,6 +54,15 @@ async function signIn() {
   }
 }
 async function signOut() { if (fb) await fb.A.signOut(fb.auth); }
+
+// 連線對戰：沒有家長登入時，用匿名登入（不用帳號）拿到一個身分
+async function waitReady() { for (let i = 0; i < 100 && !fb; i++) await new Promise(r => setTimeout(r, 100)); if (!fb) throw new Error(state.error || '連不上網路'); }
+async function ensureUser() {
+  await waitReady();
+  if (fb.auth.currentUser) return fb.auth.currentUser;
+  const r = await fb.A.signInAnonymously(fb.auth);
+  return r.user;
+}
 
 function col() { return fb.F.collection(fb.db, 'users', state.user.uid, 'mistakes'); }
 function ref(id) { return fb.F.doc(fb.db, 'users', state.user.uid, 'mistakes', id); }
@@ -125,7 +135,7 @@ async function setResolved(id, resolved) { if (fb && state.user) await fb.F.upda
 async function remove(id) { if (fb && state.user) await fb.F.deleteDoc(ref(id)); }
 
 window.Cloud = {
-  state, signIn, signOut, savePlayers, loadPlayers, recordMistake, recordReviewCorrect, recordReviewWrong, list, setResolved, remove,
+  state, signIn, signOut, ensureUser, raw: () => fb, savePlayers, loadPlayers, recordMistake, recordReviewCorrect, recordReviewWrong, list, setResolved, remove,
   pending: () => readQueue().length, REVIEW_PASS,
   onChange(cb) { listeners.add(cb); if (state.ready) cb(state); return () => listeners.delete(cb); },
 };

@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="../../shared/ui.css">
 <link rel="stylesheet" href="../../shared/battle.css">
 <link rel="stylesheet" href="../../shared/levels.css">
+<link rel="stylesheet" href="../../shared/online.css">
 <script src="../../shared/sound.js"></script>
 <script src="../../shared/music.js"></script>
 <script src="../../shared/zhuyin.js"></script>
@@ -15,6 +16,7 @@
 <script src="../../shared/levels.js"></script>
 <script src="../../shared/firebase-config.js"></script>
 <script type="module" src="../../shared/cloud.js"></script>
+<script src="../../shared/online.js"></script>
 <script src="bank.js"></script>
 <style>
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -62,6 +64,7 @@ const TITLE = '🔤 英文打怪獸';
 const LEVELS = EnglishBank.levels();
 const $ = id => document.getElementById(id);
 let playerName = '';
+let ROOM = new URLSearchParams(location.search).get('room');   // 從首頁輸入房號過來的：選好角色就直接加入
 let backTo = 'start';            // 排行榜按「返回」要回到哪裡
 
 function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id)); window.scrollTo(0, 0); }
@@ -71,7 +74,7 @@ function showStart() {
   Levels.renderStart($('start'), {
     gameId: GAME_ID, title: '英文打怪獸', homeHref: BASE, base: BASE,
     subtitle: '字母、顏色、數字、動物…一關一隻怪獸！',
-    onStart: name => { playerName = name; showMap(); },
+    onStart: name => { playerName = name; showMap(); if (ROOM) { const code = ROOM; ROOM = null; openOnline(code); } },
     onBoard: () => showBoard('start'),
   });
 }
@@ -83,6 +86,7 @@ function showMap() {
     onPick: startLevel,
     onSwitch: showStart,
     // 錯題複習：只出這位玩家答錯過的題目
+    onOnline: () => openOnline(),
     onReview: () => {
       show('battle');
       Levels.startReview({
@@ -100,6 +104,20 @@ function showBoard(from) {
   Levels.renderBoard($('board'), {
     gameId: GAME_ID, title: TITLE, name: playerName,
     onBack: () => backTo === 'map' ? showMap() : showStart(),
+  });
+}
+
+// 連線對戰：和同學用房號連線，同一題比賽（shared/online.js）
+function openOnline(code) {
+  show('battle');
+  Online.open({
+    root: $('battle'), base: BASE, gameId: GAME_ID, levels: LEVELS, name: playerName, code,
+    bank: (L, last) => EnglishBank.question(L, last),
+    renderQuestion: (q, el) => { el.innerHTML = q.html; },
+    speech: q => q.speech, answerText: q => q.answerText,
+    moves: ['字母光線', 'ABC 飛踢', '英文火焰拳', '光之斬擊'],
+    onWrong: (L, q, chosen, chosenText) => Levels.recordWrong(GAME_ID, playerName, L, q, chosen, chosenText, `${q.type}:${q.key}`),
+    onExit: showMap,
   });
 }
 

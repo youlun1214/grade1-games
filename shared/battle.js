@@ -74,6 +74,8 @@
    * opts.onWin(result)   過關時呼叫（result = { stars, hp }）
    * opts.onCorrect(q)    答對一題時呼叫（錯題複習用）
    * opts.onWrong(q, 選的值, 選項文字)  答錯一題時呼叫（記到答錯清單）
+   * opts.versus          連線對戰（shared/online.js）：{ onAnswer(round, ans), waitNext(go), timeLimit, hud }
+   *                      對手當成「怪獸」站在右邊；答錯不扣血、怪獸不回血也不會自己攻擊；輸贏由 online.js 決定（回傳的 hit()、end()）
    * opts.onEnd(result)   一場打完（輸贏都算）時呼叫，result = { won, stars, hp, correct, crit, wrong, score }
    * opts.overExtra(result)  結算畫面要多顯示的 HTML（例如排行榜）
    * opts.onNext()        按「下一關」
@@ -88,14 +90,15 @@
     const ply = opts.player;
     // 關卡名稱：一般是「第 N 關」，錯題複習等特殊關卡可以用 level.label 自訂
     const levelName = level.label || `第 ${level.no} 關`;
+    const VS = opts.versus || null;
 
     root.innerHTML = `
-      <div class="bt">
+      <div class="bt${VS ? ' versus' : ''}">
         <div class="bt-field">
           <div class="bt-hud">
             <span class="bt-hud-l"><button class="ui-round" data-act="quit" aria-label="回關卡地圖">⌂</button><button class="ui-round" data-music-toggle aria-label="背景音樂">🎵</button></span>
             <div class="bt-round">${esc(levelName)}${level.title ? '・' + esc(level.title) : ''}</div>
-            <button class="ui-round" data-act="speak" aria-label="唸題目">🔊</button>
+            <span class="bt-hud-r">${VS && VS.hud ? VS.hud : ''}<button class="ui-round" data-act="speak" aria-label="唸題目">🔊</button></span>
           </div>
           <div class="bt-info bt-info-m">
             <div class="bt-info-name"><span>${esc(mon.name)}</span>${level.no ? `<span class="bt-lv">Lv.${level.no}</span>` : ''}</div>
@@ -191,9 +194,9 @@
       state = 'busy';
       storyEl.classList.remove('on');
       bt.classList.remove('intro'); void bt.offsetWidth; bt.classList.add('intro');
-      log(`${mon.name} 跳出來了！`);
+      log(VS ? `${mon.name} 來挑戰了！` : `${mon.name} 跳出來了！`);
       Sound.beep([392, 523, 659, 784], .1, 'square');
-      later(() => { log(`加油！打倒 ${mon.name}！`); }, 1300);
+      later(() => { log(VS ? '比比看誰答得又快又對！' : `加油！打倒 ${mon.name}！`); }, 1300);
       later(() => bt.classList.remove('intro'), 2000);   // 動畫結束後移除，避免畫面停在黑幕
       later(nextQ, 2100);
     }
@@ -279,6 +282,7 @@
       last = now;
       if (state === 'asking' && !document.hidden) {   // 切到別的分頁時暫停計時
         if (!reading) elapsed += dt;
+        if (VS && VS.timeLimit && elapsed >= VS.timeLimit) return pick(null, '\u0000timeout');   // 時間到算沒答
         if (!bt.classList.contains('charging') && elapsed >= nextAttackAt - R.chargeTime) startCharge(R.chargeTime);
         if (elapsed >= nextAttackAt) {
           nextAttackAt += R.attackEvery;
@@ -325,7 +329,7 @@
         Sound.beep([180, 120], .15, 'square');
         drawHp();
         later(() => { if (state !== 'over') player.set('idle'); }, 700);
-        if (pHp <= 0) lose();
+        if (pHp <= 0 && !VS) lose();
       }, 200);
     }
 
@@ -347,8 +351,10 @@
         if (critCombo >= R.specialCombo && ply.special && ply.img && ply.img.beam) {
           critCombo = 0; stats.special++;
           log(`連續 ${R.specialCombo} 次暴擊！必殺技！`, 'good');
+          VS && VS.onAnswer(round, { ok: true, p: tier.power + R.specialBonus, c: true, s: true });
           return showSpecial(tier.power + R.specialBonus);
         }
+        VS && VS.onAnswer(round, { ok: true, p: tier.power, c: !!tier.crit });
         const move = pickOne(ply.moves || ['衝撞']);
         log(tier.crit ? `你使出了 ${move}！⚡ 暴擊！` : `你使出了 ${move}！${pickOne(CHEERS)}`, 'good');
         Sound.beep(tier.crit ? [660, 880, 1100, 1320] : [660, 880, 1100]);
@@ -362,22 +368,25 @@
           flash(mEl, 'hit', 450);
           floatDmg('m', `-${tier.power}`, tier.crit);
           drawHp();
-          if (mHp <= 0) return win();
-          later(() => { monster.set('idle'); player.set('idle'); }, 700);
-          later(nextQ, 1300);
+          if (mHp <= 0 && !VS) return win();
+          later(() => { if (state !== 'over') { monster.set('idle'); player.set('idle'); } }, 700);
+          later(goNext, 1300);
         }, 250);
       } else {
         // 答錯：顯示正確答案，怪獸回血、蓄力後攻擊，再換新題目
         stats.wrong++;
         critCombo = 0;
-        healMonster();
-        // 通知遊戲：記到答錯清單（choice 是孩子選的那個選項）
-        opts.onWrong && opts.onWrong(q, value, choiceText(btn));
-        btn.classList.add('wrong');
+        const timeout = value === '\u0000timeout';
+        if (VS) VS.onAnswer(round, { ok: false, p: 0, t: timeout || undefined });
+        else healMonster();
+        // 通知遊戲：記到答錯清單（choice 是孩子選的那個選項；時間到不算答錯）
+        if (!timeout) opts.onWrong && opts.onWrong(q, value, choiceText(btn));
+        if (btn) btn.classList.add('wrong');
         if (rightBtn) rightBtn.classList.add('right');
         const ansText = opts.answerText ? opts.answerText(q) : String(q.ans);
-        log(`答案是 ${ansText}，小心！`, 'bad');
+        log(timeout ? `時間到！答案是 ${ansText}` : `答案是 ${ansText}${VS ? '' : '，小心！'}`, 'bad');
         Sound.say(q.answerSpeech ? ['答案是', ...[].concat(q.answerSpeech)] : `答案是 ${ansText}`);   // answerSpeech：英文答案用英文聲音唸，例如 { en: 'cat' }
+        if (VS) return later(goNext, 1800);   // 對戰：答錯不扣血，看完答案就等下一題
         startCharge(R.wrongChargeTime);
         later(() => {
           stopCharge();
@@ -409,7 +418,7 @@
       el.innerHTML = `
         <div class="sp-dim"></div><div class="sp-lines"></div>
         <div class="sp-title"><b>必殺技</b><span class="sp-name">${esc(sp.name)}</span></div>
-        <img class="sp-mon" src="${[].concat(mon.img.idle)[0]}" alt="">
+        <img class="sp-mon${VS ? ' vs' : ''}" src="${[].concat(mon.img.idle)[0]}" alt="">
         <img class="sp-hero" src="${ply.img.beam}" alt="">
         <div class="sp-charge"><i></i><i></i><i></i></div>
         <div class="sp-beam"><u class="b1"></u><u class="b2"></u><u class="b3"></u><u class="b4"></u><s></s><s></s><s></s><s></s></div>
@@ -449,10 +458,46 @@
         removeSpecial();
         flash(mEl, 'hit', 450);
         floatDmg('m', `-${power}`, true);
-        if (mHp <= 0) return win();
-        later(() => { monster.set('idle'); player.set('idle'); }, 700);
-        later(nextQ, 1300);
+        if (mHp <= 0 && !VS) return win();
+        later(() => { if (state !== 'over') { monster.set('idle'); player.set('idle'); } }, 700);
+        later(goNext, 1300);
       }, 3300);
+    }
+
+    // 下一題：對戰時要等兩個人都答完（online.js 決定什麼時候繼續）
+    function goNext() {
+      if (state === 'over') return;
+      if (VS) { state = 'busy'; VS.waitNext(() => { if (state !== 'over') nextQ(); }); }
+      else nextQ();
+    }
+
+    // ===== 連線對戰：對手答對打過來、分出勝負 =====
+    function hit(power, text) {
+      if (state === 'over' || !power) return;
+      const move = text || `${mon.name} 使出了 ${pickOne(mon.moves || ['撞擊'])}！`;
+      log(move, 'bad');
+      flash(mEl, 'lunge', 300);
+      later(() => {
+        if (state === 'over') return;
+        pHp -= power;
+        player.set('hurt'); flash(pEl, 'hit', 450);
+        floatDmg('p', `-${power}`);
+        Sound.beep([180, 120], .15, 'square');
+        drawHp();
+        later(() => { if (state !== 'over') player.set('idle'); }, 700);
+      }, 200);
+    }
+    // kind：win、lose、tie；html：結果畫面的內容（按鈕由 online.js 給）
+    function end(kind, html) {
+      if (state === 'over') return;
+      clearAll();
+      state = 'over';
+      stopCharge();
+      Sound.hush();
+      if (kind === 'win') { monster.set('down'); later(() => player.set('win'), 400); window.Music && Music.jingle('win'); }
+      else if (kind === 'lose') { player.set('hurt'); window.Music && Music.jingle('lose'); }
+      finish(kind === 'win', 0);
+      later(() => showOver(kind === 'lose' ? 'lose' : 'win', html), 900);
     }
 
     // ===== 勝負 =====
@@ -552,7 +597,7 @@
     };
 
     reset(true);
-    return { quit };
+    return { quit, hit, end, heroImg };
   }
 
   window.Battle = { start, RULES, starsFor, starsHtml };
