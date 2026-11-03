@@ -52,5 +52,5 @@
     });
   }
 
-  window.Zhuyin = { DICT, annotate, apply, has: c => !!DICT[c] };
+  window.Zhuyin = { DICT, annotate, apply, ruby, has: c => !!DICT[c] };
 })();

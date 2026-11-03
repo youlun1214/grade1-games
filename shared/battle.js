@@ -231,13 +231,38 @@
       zy(choicesEl);
       fitScreen();
       state = 'asking';
-      Sound.say(opts.speech(q));
+      readAloud();
+    }
+
+    // 唸題目的時候不計時（題目長的孩子才不會錯過暴擊）；唸完才開始算秒數
+    // 還在唸的時候就答對，一樣算 3 秒內的暴擊；按 🔊 重唸也會暫停計時
+    let reading = false, readId = 0;
+    function readAloud() {
+      const id = ++readId;
+      reading = true;
+      bt.classList.add('reading');
+      Sound.say(opts.speech(q)).then(() => { if (id === readId) { reading = false; bt.classList.remove('reading'); } });
     }
 
     // 題目比較大時把戰場縮小，選項才不會跑到畫面外（手機瀏覽器的可視高度比螢幕矮很多）
+    const LANDSCAPE = window.matchMedia('(orientation: landscape) and (min-width: 600px)');
     function fitScreen() {
       const field = $('.bt-field'), panel = $('.bt-panel'), H = window.innerHeight;
-      bt.classList.remove('compact'); field.style.height = ''; bt.style.removeProperty('--fh');
+      bt.classList.remove('compact'); field.style.height = ''; bt.style.removeProperty('--fh'); qEl.style.zoom = '';
+      // 圖片還沒載入時量不準：載入後再算一次
+      qEl.querySelectorAll('img').forEach(img => { if (!img.complete) img.addEventListener('load', () => { if (q) fitScreen(); }, { once: true }); });
+      // 橫放：戰場在左、答題在右（battle.css），題目太高就把題目整個縮小，選項一定看得到
+      if (LANDSCAPE.matches) {
+        // 題目需要的高度 vs. 答題框扣掉訊息和選項後剩下的高度
+        const room = panel.clientHeight - choicesEl.offsetHeight - logEl.offsetHeight - 48;
+        qEl.style.flex = '0 0 auto'; const need = qEl.offsetHeight; qEl.style.flex = '';   // 題目本身要多高（不是撐開後的高度）
+        let z = need > room ? Math.max(.4, room / need) : 1;
+        if (z < 1) qEl.style.zoom = z;
+        // 再實際量一次：題目最下面不能壓到選項（縮放後的大小算不準時，一次再縮一點）
+        const bottom = () => [...qEl.querySelectorAll('*')].reduce((m, e) => Math.max(m, e.getBoundingClientRect().bottom), 0);
+        for (let i = 0; i < 8 && z > .4 && bottom() > choicesEl.getBoundingClientRect().top - 4; i++) qEl.style.zoom = (z -= .05);
+        return;
+      }
       const need = () => panel.offsetHeight + 36;     // 36：戰場和答題框之外的上下留白
       if (field.offsetHeight + need() <= H) return;
       bt.classList.add('compact');
@@ -253,7 +278,7 @@
       const dt = Math.min(.25, (now - last) / 1000);   // 平板休眠回來時不會一次跳很多秒
       last = now;
       if (state === 'asking' && !document.hidden) {   // 切到別的分頁時暫停計時
-        elapsed += dt;
+        if (!reading) elapsed += dt;
         if (!bt.classList.contains('charging') && elapsed >= nextAttackAt - R.chargeTime) startCharge(R.chargeTime);
         if (elapsed >= nextAttackAt) {
           nextAttackAt += R.attackEvery;
@@ -523,7 +548,7 @@
       else if (act === 'go' && state === 'story') intro();
       else if (act === 'again') reset(false);
       else if (act === 'next') { clearAll(); state = 'over'; opts.onNext && opts.onNext(); }
-      else if (act === 'speak' && q && state === 'asking') Sound.say(opts.speech(q));
+      else if (act === 'speak' && q && state === 'asking') readAloud();
     };
 
     reset(true);

@@ -70,11 +70,18 @@
   }
 
   // 用選好的聲音唸中文；text 也可以是一串，例如 ['聽一聽，哪一個是', { en: 'cat' }]，英文的部分用英文聲音唸
+  // 回傳 Promise：唸完（或被打斷、出錯）時完成，戰鬥用來「唸完題目才開始計時」
+  // iPhone 有時候不會通知唸完，所以依字數估一個最長時間，時間到也算唸完
   function say(text, voice) {
+    return new Promise(done => {
     try {
-      if (!hasTTS) return;
+      if (!hasTTS) return done();
       speechSynthesis.cancel();
-      (Array.isArray(text) ? text : [text]).forEach(part => {
+      const parts = Array.isArray(text) ? text : [text];
+      const len = parts.reduce((n, p) => n + String(p && typeof p === 'object' ? p.en : p).length, 0);
+      const guard = setTimeout(done, Math.min(15000, 1200 + len * 330));
+      const finish = () => { clearTimeout(guard); done(); };
+      parts.forEach((part, i) => {
         const en = part && typeof part === 'object';
         const u = new SpeechSynthesisUtterance(en ? part.en : part);
         const v = en ? enVoice() : (voice || current());
@@ -82,9 +89,11 @@
         u.lang = v ? v.lang : (en ? 'en-US' : 'zh-TW');
         u.rate = en ? (isNatural(v) ? .8 : .75) : (isNatural(v) ? .95 : .85);   // 英文唸慢一點，孩子比較聽得清楚
         u.pitch = 1.05;
+        if (i === parts.length - 1) { u.onend = finish; u.onerror = finish; }
         speechSynthesis.speak(u);
       });
-    } catch (e) {}
+    } catch (e) { done(); }
+    });
   }
 
   function hush() { try { speechSynthesis.cancel(); } catch (e) {} }

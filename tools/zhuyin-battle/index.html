@@ -36,6 +36,8 @@
   .zq-text { font-size:clamp(2.4rem,11vw,3.4rem); font-weight:900; color:#1d2340; letter-spacing:.1em; line-height:1.2; }
   .zq-multi { font-size:clamp(1.2rem,5vw,1.8rem); letter-spacing:.02em; line-height:1.35; }   /* 長的詞（五個字）會在字和字之間換行 */
   .bt-choices:has(.zq-multi) { grid-template-columns:repeat(2, 1fr); }
+  .zq-text u { color:#e8443a; text-decoration-thickness:4px; text-underline-offset:6px; }
+  .zq-hw { font-size:clamp(1.25rem,5.2vw,1.75rem); font-weight:900; line-height:1.2; }
   .zq-blank { display:inline-block; min-width:1em; color:#e05555; border-bottom:4px solid #e05555; }
   .zq-emoji { font-size:clamp(2.4rem,11vw,3.2rem); line-height:1; }
   .zq-tone { display:inline-block; min-width:1em; margin-right:6px; color:#d06020; }
@@ -43,6 +45,15 @@
   .zq-pick { display:flex; flex-direction:column; align-items:center; line-height:1; }
   .zq-pick small { font-size:1.1rem; color:#5a6890; margin-top:4px; }
   .bt-choices button.right .zq-pick small { color:#fff; }
+  /* 手機橫放：聲調選項不要換行（換行會讓選項變很高，題目就被擠小） */
+  @media (orientation:landscape) and (min-width:600px) {
+    #battle .bt-choices button:has(.zq-tone) { font-size:clamp(1.05rem, 5vh, 1.8rem); }
+    #battle .bt-choices button:has(.zq-tone) .bt-c { white-space:nowrap; }
+    /* 課文詞語、找一找的選項：四個排一排，字小一點 */
+    #battle .bt-choices:has(.zq-multi), #battle .bt-choices:has(.zq-hw) { grid-template-columns:repeat(4, 1fr); }
+    .zq-multi { font-size:clamp(.9rem, 4.4vh, 1.5rem); }
+    .zq-hw { font-size:clamp(.95rem, 4.6vh, 1.6rem); }
+  }
 </style>
 </head>
 <body>

@@ -109,3 +109,9 @@
 - 每答錯一題，怪獸回 10 滴血
 - 累積答錯到 3、6、9…題時再多回 20 滴（那一題共回 30）
 - 最多回到滿血；數字在 `shared/battle.js` 的 `RULES`（`wrongHeal`、`wrongHealEvery`、`wrongHealBonus`、`specialCombo`、`specialBonus`）
+
+## 計時從唸完題目開始
+- 題目唸完才開始算秒數（`shared/battle.js` 的 `readAloud`）；還在唸的時候就答對，算 3 秒內的暴擊
+- 按 🔊 重唸也會暫停計時；唸題時 🔊 按鈕會發亮
+- iPhone 有時候不會通知唸完，所以依字數估一個最長時間（`shared/sound.js` 的 `say` 回傳 Promise）
+

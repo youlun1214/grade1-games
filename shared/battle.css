@@ -243,3 +243,22 @@
 .bt.compact .bt-num { display:none; }
 .bt.compact .bt-choices button { min-height:58px; }
 
+/* 唸題目時（還沒開始計時）：🔊 按鈕發亮 */
+.bt.reading [data-act="speak"] { box-shadow:0 0 0 4px #ffe066, 0 0 16px #ffe066; }
+
+/* ===== 手機、平板橫放：戰場在左、答題在右，整個畫面一次看完 ===== */
+@media (orientation:landscape) and (min-width:600px) {
+  .screen:has(> .bt) { max-width:1180px; }
+  .bt { display:grid; grid-template-columns:minmax(0, 44fr) minmax(0, 56fr); grid-template-rows:minmax(0, 1fr);
+        gap:12px; height:100dvh; min-height:0; padding:8px 0; box-sizing:border-box; }
+  .bt-field { height:auto; min-height:0; }
+  .bt-m, .bt-p { height:min(30vh, 20vw); font-size:min(20vh, 13vw); }
+  .bt-panel { margin-top:0; min-height:0; overflow:hidden; padding-top:20px; gap:6px; }
+  .bt-log { margin:-6px 0 -2px; }
+  .bt-q { min-height:0; flex:1 1 auto; }
+  .bt-choices { gap:8px; }
+  .bt-choices, .bt-choices[data-n="3"] { grid-template-columns:repeat(var(--cols, 4), 1fr); }
+  .bt-choices[data-n="2"] { --cols:2; } .bt-choices[data-n="3"] { --cols:3; }
+  .bt-choices button { min-height:clamp(50px, 15vh, 110px); font-size:clamp(1.1rem, 5.5vh, 2.3rem); padding:2px 4px; min-width:0; }
+}
+
