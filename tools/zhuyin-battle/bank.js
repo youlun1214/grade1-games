@@ -194,7 +194,8 @@
       return { word: t.w, html: prompt('這個詞少了哪一個注音？') + `<div class="zq-text no-zy">${t.w}</div>` + big(shown),
                speech: `${t.w}，${t.w}少了哪一個注音？`, choices, ans, answerText: ans };
     },
-    // 1. 找一找：看符號，找出課文裡有這個音的詞（選項是課文的詞＋課本注音）
+    // 1. 找一找：看符號，聽四個課文的詞，找出有這個音的那一個
+    //    選項只放國字、不標注音（標了注音就變成找符號，等於直接給答案）；唸題目時會一個一個唸選項，唸到的那個會發亮
     hunt(L, last) {
       const words = LESSON_WORDS.filter(t => t.level <= Math.min(L, 9));
       const fresh = newSyms(L);
@@ -211,9 +212,9 @@
       without.sort((a, b) => score(b) - score(a));
       const picks = shuffle([w, ...without.slice(0, 3)]);
       // 圖下面附小字，語音沒聲音時大人也能唸給孩子聽
-      const choices = picks.map(x => ({ html: `<span class="zq-hw">${wordZy(x)}</span>`, value: x.w }));
-      return { word: target, html: prompt('課文裡，哪一個詞有這個音？') + big(target),
-               speech: `哪一個詞有這個音？${picks.map(x => x.w).join('，')}`,
+      const choices = picks.map(x => ({ html: `<span class="zq-hw no-zy">${x.w}</span>`, value: x.w }));
+      return { word: target, html: prompt('聽一聽，哪一個詞有這個音？') + big(target),
+               speech: '聽一聽，哪一個詞有這個音？', choiceSpeech: picks.map(x => x.w),
                choices, ans: w.w, answerText: `${w.w}（${w.zys.join(' ')}）` };
     },
     // 2. 看圖找第一個音（聲符）
@@ -302,6 +303,12 @@
     try { q = TYPES[t](L, last); } catch (e) { q = null; }
     if (!q) { t = 'text'; q = TYPES.text(L, last); }   // 這一關湊不出這種題（例如沒有三拼音的圖），改出課文詞語
     q.type = t;
+    // 提示文字裡剛好有要考的字（例如考「跑第一」，提示「哪一個」的「一」），那個字也不標注音，才不會洩漏答案
+    const hans = [...new Set([...String(q.word || '')].filter(c => /[一-鿿]/.test(c)))];
+    if (hans.length) {
+      const re = new RegExp(`[${hans.join('')}]`, 'g');
+      q.html = q.html.replace(/>([^<]+)</g, (m, txt) => '>' + txt.replace(re, c => `<span class="no-zy">${c}</span>`) + '<');
+    }
     return q;
   }
 

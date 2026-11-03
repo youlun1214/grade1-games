@@ -400,7 +400,7 @@
   // 答錯一題時記下來（itemKey：同一題用同一個代號，錯很多次會累加）
   function recordWrong(game, player, levelNo, q, chosen, chosenText, itemKey) {
     if (!window.Cloud) return;
-    const keep = { html: q.html, choices: q.choices, ans: q.ans, speech: q.speech, answerText: q.answerText, answerSpeech: q.answerSpeech, type: q.type };
+    const keep = { html: q.html, choices: q.choices, ans: q.ans, speech: q.speech, choiceSpeech: q.choiceSpeech, answerText: q.answerText, answerSpeech: q.answerSpeech, type: q.type };
     Cloud.recordMistake({ game, player, level: levelNo, type: q.type, itemKey, q: keep, chosen: String(chosen), chosenText }).catch(() => {});
   }
 
@@ -408,6 +408,16 @@
    * 錯題複習：只出這位玩家答錯過、還沒學會的題目，連續答對 2 次就算學會
    * o.game, o.player, o.root, o.base, o.moves, o.speech(q), o.answerText(q), o.onExit()
    */
+  // 舊的錯題紀錄修正：「找一找」以前的選項有標注音（等於給答案），複習時拿掉注音，改成一個一個唸選項
+  function fixOld(q) {
+    if (q.type !== 'hunt' || !Array.isArray(q.choices)) return q;
+    const strip = h => String(h).replace(/<span class="zy-r">(?:<span[^>]*>[^<]*<\/span>){2}<\/span>/g, '').replace('class="zq-hw"', 'class="zq-hw no-zy"');
+    q.choices = q.choices.map(c => (c && typeof c === 'object') ? Object.assign({}, c, { html: strip(c.html) }) : c);
+    if (!q.choiceSpeech) q.choiceSpeech = q.choices.map(c => (c && typeof c === 'object') ? c.value : c);
+    if (/哪一個有這個音|哪一個詞有這個音/.test(q.speech || '')) q.speech = '聽一聽，哪一個詞有這個音？';
+    return q;
+  }
+
   async function startReview(o) {
     if (!window.Cloud) { alert('雲端紀錄還沒載入，請稍等一下再試。'); return false; }
     const items = await Cloud.list({ game: o.game, player: o.player, includeResolved: false });
@@ -426,7 +436,7 @@
       level: { no: 0, label: '錯題複習', title: `${items.length} 題`, monster: monster(i, o.base),
                rules: { monsterHp: Math.max(40, Math.min(100, items.length * 20)), firstAttackAt: 12 } },
       player: player(o.base, o.moves, o.player, getPlayer(o.game, o.player).best + 1),
-      nextQuestion: () => { const m = nextItem(); return Object.assign({}, m.q, { _item: m, key: m.id, word: m.id }); },
+      nextQuestion: () => { const m = nextItem(); return fixOld(Object.assign({}, m.q, { _item: m, key: m.id, word: m.id })); },
       renderQuestion: (q, el) => { el.innerHTML = q.html; },
       speech: o.speech, answerText: o.answerText,
       background: scene(i, o.base),

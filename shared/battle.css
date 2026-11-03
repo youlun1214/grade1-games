@@ -267,3 +267,6 @@
 .sp-mon.vs { scale:-1 1; }
 .bt-hud-r { display:flex; gap:8px; }
 
+/* 一個一個唸選項時，唸到的那個發亮 */
+.bt-choices button.speaking { border-color:#f0a800; box-shadow:0 0 0 4px #ffe066, 0 0 18px #ffe066; transform:scale(1.04); }
+

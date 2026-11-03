@@ -239,12 +239,24 @@
 
     // 唸題目的時候不計時（題目長的孩子才不會錯過暴擊）；唸完才開始算秒數
     // 還在唸的時候就答對，一樣算 3 秒內的暴擊；按 🔊 重唸也會暫停計時
+    // q.choiceSpeech：選項要一個一個唸（選項不標注音的聽力題），唸到哪一個，那個按鈕就發亮
     let reading = false, readId = 0;
     function readAloud() {
-      const id = ++readId;
+      const id = ++readId, cur = q;
       reading = true;
       bt.classList.add('reading');
-      Sound.say(opts.speech(q)).then(() => { if (id === readId) { reading = false; bt.classList.remove('reading'); } });
+      const still = () => id === readId && q === cur && state === 'asking';
+      (async () => {
+        await Sound.say(opts.speech(cur));
+        const words = cur.choiceSpeech || [];
+        for (let i = 0; i < words.length && still(); i++) {
+          const b = choicesEl.children[i];
+          if (b) b.classList.add('speaking');
+          await new Promise(r => setTimeout(r, 250));
+          if (still()) await Sound.say(words[i]);
+          if (b) b.classList.remove('speaking');
+        }
+      })().then(() => { if (id === readId) { reading = false; bt.classList.remove('reading'); } });
     }
 
     // 題目比較大時把戰場縮小，選項才不會跑到畫面外（手機瀏覽器的可視高度比螢幕矮很多）
