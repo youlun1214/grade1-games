@@ -25,7 +25,7 @@
     { monsterHp: 100, firstAttackAt: 10 }, { monsterHp: 110, firstAttackAt: 10 }, { monsterHp: 110, firstAttackAt: 10 },
     { monsterHp: 130, firstAttackAt: 10 }, { monsterHp: 130, firstAttackAt: 9 },  { monsterHp: 130, firstAttackAt: 9 },
     { monsterHp: 150, firstAttackAt: 9 },  { monsterHp: 150, firstAttackAt: 8 },  { monsterHp: 150, firstAttackAt: 8 },
-    { monsterHp: 190, firstAttackAt: 7, attackEvery: 4 },
+    { monsterHp: 200, firstAttackAt: 7, attackEvery: 4 },
   ];
 
   // 國字旁邊加注音（有載入 shared/zhuyin.js 才會加）
