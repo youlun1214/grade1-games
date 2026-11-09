@@ -1,6 +1,6 @@
 // 版本標示：畫面右下角顯示「V.民國年月日」，例如 V.1151102
 // 下面這行由 .githooks/pre-commit 在每次 commit 時自動改成當天日期，不用手動改
-window.APP_VERSION = 'V.1151103';
+window.APP_VERSION = 'V.1151109';
 (function () {
   function show() {
     const el = document.createElement('div');

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>注音聽寫題目</title>
+<style>
+  /* 注音首冊聽寫題目：照學校聽寫題目的格子（直排、由右往左、題號＋注音＋句點），一課一張 A4
+     單一檔案，不需要其他檔案就能開；不連到遊戲網站 */
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e9e4dc; font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif; color: #111; }
+  .bar { background: #1d2340; color: #fff; padding: 10px 16px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .bar select, .bar button { font: inherit; padding: 6px 12px; border-radius: 10px; border: 0; cursor: pointer; }
+  .bar button { background: #ffb703; font-weight: 700; }
+
+  .page { width: 210mm; height: 297mm; margin: 14px auto; background: #fff; padding: 14mm 12mm; box-shadow: 0 2px 10px rgba(0,0,0,.15);
+    display: flex; flex-direction: column; align-items: center; }
+  @page { size: A4; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .bar { display: none; }
+    .page { margin: 0; box-shadow: none; break-after: page; }
+    .page:last-child { break-after: auto; }
+  }
+
+  /* 標題：第幾課（只有注音，放右上） */
+  .wrap { display: flex; flex-direction: column; }
+  .title { align-self: flex-end; display: flex; gap: 2mm; margin: 0 2mm 2mm 0; }
+  .title .syl { width: 10mm; height: 15mm; font-size: 5.4mm; }
+
+  /* 格子：一欄一欄由右往左，每欄由上往下 */
+  .grid { display: flex; flex-direction: row-reverse; border-left: .3mm solid #555; border-top: .3mm solid #555; }
+  .col { display: flex; flex-direction: column; }
+  .cell { flex: none; width: 18mm; height: 18.5mm; border-right: .3mm solid #555; border-bottom: .3mm solid #555;
+    display: flex; align-items: center; justify-content: center; }
+  .num { font-family: "Times New Roman", serif; font-size: 9mm; }
+  .dot { font-size: 6mm; }
+
+  /* 一個音：符號直排，聲調在右邊，輕聲點在上面 */
+  .syl { display: flex; align-items: center; justify-content: center; font-family: "BiauKai", "DFKai-SB", "標楷體", serif; font-size: 6.8mm; }
+  .syl.s3 { font-size: 5.2mm; }   /* 三個符號的音（ㄒㄧㄠ）字小一點才放得下 */
+  .stk { display: flex; flex-direction: column; align-items: center; line-height: 1.02; position: relative; }
+  .stk .s { position: relative; }
+  .stk .t { position: absolute; left: 100%; top: -.1em; font-size: .9em; }
+  .stk .q { position: absolute; top: -.6em; left: 50%; transform: translateX(-50%); }
+</style>
+</head>
+<body>
+<div class="bar">
+  <b>📄 注音聽寫題目</b>
+  <select id="pick"></select>
+  <button onclick="print()">🖨️ 列印</button>
+  <span style="font-size:.9rem;color:#cfd6ee">列印時選 A4、實際大小（100%）、不要頁首頁尾</span>
+</div>
+<main id="out"></main>
+
+<script>
+// ===== 康軒首冊 9 課的課文詞語（照課本抄）；第 n 行就是第 n 課 =====
+// 不夠 10 題的課，用這一課符號拼得出來的看圖單字補（EXTRA）
+const LESSONS = [
+  ['貓咪', '貓咪 ㄇㄠ ㄇㄧ|咪咪咪 ㄇㄧ ㄇㄧ ㄇㄧ|嗶 ㄅㄧ|弟弟 ㄉㄧˋ ˙ㄉㄧ|跑第一 ㄆㄠˇ ㄉㄧˋ ㄧ'],
+  ['鵝寶寶', '鵝媽媽 ㄜˊ ㄇㄚ ˙ㄇㄚ|哈哈哈 ㄏㄚ ㄏㄚ ㄏㄚ|好得意 ㄏㄠˇ ㄉㄜˊ ㄧˋ|孵出 ㄈㄨ ㄔㄨ|鵝寶寶 ㄜˊ ㄅㄠˇ ˙ㄅㄠ|五隻 ㄨˇ ㄓ'],
+  ['河馬和河狸', '河馬 ㄏㄜˊ ㄇㄚˇ|去泡澡 ㄑㄩˋ ㄆㄠˋ ㄗㄠˇ|半路 ㄅㄢˋ ㄌㄨˋ|遇到 ㄩˋ ㄉㄠˋ|河狸 ㄏㄜˊ ㄌㄧˊ|喔 ㄛ|忙著 ㄇㄤˊ ˙ㄓㄜ|築巢 ㄓㄨˊ ㄔㄠˊ'],
+  ['笑嘻嘻', '背著 ㄅㄟ ˙ㄓㄜ|書包 ㄕㄨ ㄅㄠ|手拉手 ㄕㄡˇ ㄌㄚ ㄕㄡˇ|笑嘻嘻 ㄒㄧㄠˋ ㄒㄧ ㄒㄧ|一二一 ㄧ ㄦˋ ㄧ|好歡喜 ㄏㄠˇ ㄏㄨㄢ ㄒㄧˇ'],
+  ['翹翹板', '好朋友 ㄏㄠˇ ㄆㄥˊ ㄧㄡˇ|一起來玩 ㄧˋ ㄑㄧˇ ㄌㄞˊ ㄨㄢˊ|翹翹板 ㄑㄧㄠˋ ㄑㄧㄠˋ ㄅㄢˇ|上上下下 ㄕㄤˋ ㄕㄤˋ ㄒㄧㄚˋ ㄒㄧㄚˋ|高高低低 ㄍㄠ ㄍㄠ ㄉㄧ ㄉㄧ|好像 ㄏㄠˇ ㄒㄧㄤˋ|小鳥 ㄒㄧㄠˇ ㄋㄧㄠˇ|飛飛飛 ㄈㄟ ㄈㄟ ㄈㄟ'],
+  ['謝謝老師', '我要送老師 ㄨㄛˇ ㄧㄠˋ ㄙㄨㄥˋ ㄌㄠˇ ㄕ|一朵 ㄧˋ ㄉㄨㄛˇ|小紅花 ㄒㄧㄠˇ ㄏㄨㄥˊ ㄏㄨㄚ|謝謝老師 ㄒㄧㄝˋ ˙ㄒㄧㄝ ㄌㄠˇ ㄕ|教我讀書 ㄐㄧㄠ ㄨㄛˇ ㄉㄨˊ ㄕㄨ|教我畫畫 ㄐㄧㄠ ㄨㄛˇ ㄏㄨㄚˋ ㄏㄨㄚˋ'],
+  ['龜兔賽跑', '烏龜 ㄨ ㄍㄨㄟ|兔子 ㄊㄨˋ ˙ㄗ|來比賽 ㄌㄞˊ ㄅㄧˇ ㄙㄞˋ|看誰跑得快 ㄎㄢˋ ㄕㄟˊ ㄆㄠˇ ˙ㄉㄜ ㄎㄨㄞˋ|領先 ㄌㄧㄥˇ ㄒㄧㄢ|哈哈笑 ㄏㄚ ㄏㄚ ㄒㄧㄠˋ|樹下 ㄕㄨˋ ㄒㄧㄚˋ|睡午覺 ㄕㄨㄟˋ ㄨˇ ㄐㄧㄠˋ|落後 ㄌㄨㄛˋ ㄏㄡˋ|不氣餒 ㄅㄨˋ ㄑㄧˋ ㄋㄟˇ|跟在後面 ㄍㄣ ㄗㄞˋ ㄏㄡˋ ㄇㄧㄢˋ|追追追 ㄓㄨㄟ ㄓㄨㄟ ㄓㄨㄟ'],
+  ['拔蘿蔔', '菜園裡 ㄘㄞˋ ㄩㄢˊ ㄌㄧˇ|長出 ㄓㄤˇ ㄔㄨ|大蘿蔔 ㄉㄚˋ ㄌㄨㄛˊ ˙ㄅㄛ|拔不動 ㄅㄚˊ ㄅㄨˋ ㄉㄨㄥˋ|大家 ㄉㄚˋ ㄐㄧㄚ|快快來 ㄎㄨㄞˋ ㄎㄨㄞˋ ㄌㄞˊ|大象 ㄉㄚˋ ㄒㄧㄤˋ|拉著 ㄌㄚ ˙ㄓㄜ|黃牛 ㄏㄨㄤˊ ㄋㄧㄡˊ|浣熊 ㄨㄢˇ ㄒㄩㄥˊ|嘿呦 ㄏㄟ ㄧㄛ|好熱鬧 ㄏㄠˇ ㄖㄜˋ ㄋㄠˋ|捲起袖子 ㄐㄩㄢˇ ㄑㄧˇ ㄒㄧㄡˋ ˙ㄗ|一起 ㄧˋ ㄑㄧˇ|拔蘿蔔 ㄅㄚˊ ㄌㄨㄛˊ ˙ㄅㄛ'],
+  ['動物狂歡會', '山崖下 ㄕㄢ ㄧㄞˊ ㄒㄧㄚˋ|動物 ㄉㄨㄥˋ ㄨˋ|狂歡會 ㄎㄨㄤˊ ㄏㄨㄢ ㄏㄨㄟˋ|開心 ㄎㄞ ㄒㄧㄣ|來慶祝 ㄌㄞˊ ㄑㄧㄥˋ ㄓㄨˋ|小熊 ㄒㄧㄠˇ ㄒㄩㄥˊ|滾大球 ㄍㄨㄣˇ ㄉㄚˋ ㄑㄧㄡˊ|馴鹿 ㄒㄩㄣˊ ㄌㄨˋ|敲大鼓 ㄑㄧㄠ ㄉㄚˋ ㄍㄨˇ|孔雀 ㄎㄨㄥˇ ㄑㄩㄝˋ|變魔術 ㄅㄧㄢˋ ㄇㄛˊ ㄕㄨˋ|青蛙 ㄑㄧㄥ ㄨㄚ|大合唱 ㄉㄚˋ ㄏㄜˊ ㄔㄤˋ|嘓嘓嘓 ㄍㄨㄛ ㄍㄨㄛ ㄍㄨㄛ|咚咚咚 ㄉㄨㄥ ㄉㄨㄥ ㄉㄨㄥ|表演 ㄅㄧㄠˇ ㄧㄢˇ|真精彩 ㄓㄣ ㄐㄧㄥ ㄘㄞˇ'],
+];
+const EXTRA = [
+  '米 ㄇㄧˇ|筆 ㄅㄧˇ|鼻 ㄅㄧˊ|帽 ㄇㄠˋ|豹 ㄅㄠˋ',
+  '馬 ㄇㄚˇ|虎 ㄏㄨˇ|豬 ㄓㄨ|茶 ㄔㄚˊ|車 ㄔㄜ',
+  '魚 ㄩˊ|雨 ㄩˇ|蛋 ㄉㄢˋ|狼 ㄌㄤˊ|盤 ㄆㄢˊ',
+  '蛇 ㄕㄜˊ|樹 ㄕㄨˋ|耳 ㄦˇ|杯 ㄅㄟ|碗 ㄨㄢˇ|船 ㄔㄨㄢˊ',
+  '狗 ㄍㄡˇ|猴 ㄏㄡˊ|牛 ㄋㄧㄡˊ|羊 ㄧㄤˊ|鴨 ㄧㄚ',
+  '花 ㄏㄨㄚ|雞 ㄐㄧ|鞋 ㄒㄧㄝˊ|火 ㄏㄨㄛˇ|傘 ㄙㄢˇ',
+  '', '', '',
+];
+const NUM_ZY = ['ㄧ', 'ㄦˋ', 'ㄙㄢ', 'ㄙˋ', 'ㄨˇ', 'ㄌㄧㄡˋ', 'ㄑㄧ', 'ㄅㄚ', 'ㄐㄧㄡˇ'];
+const ROWS = 12, COLS = 10;   // 一張 12 列 × 10 欄
+
+const SYM = /[ㄅ-ㄩ]/;
+function syl(zy) {
+  const syms = [...zy].filter(c => SYM.test(c));
+  const tone = /ˊ/.test(zy) ? 'ˊ' : /ˇ/.test(zy) ? 'ˇ' : /ˋ/.test(zy) ? 'ˋ' : '';
+  let h = zy.includes('˙') ? '<span class="q">˙</span>' : '';
+  syms.forEach((s, i) => { h += `<span class="s">${s}${i === syms.length - 1 && tone ? `<span class="t">${tone}</span>` : ''}</span>`; });
+  return `<div class="syl${syms.length > 2 ? ' s3' : ''}"><div class="stk">${h}</div></div>`;
+}
+const parse = line => line.split('|').filter(Boolean).map(s => { const [w, ...zys] = s.trim().split(/\s+/); return { w, zys }; });
+
+function page(L) {
+  const [title, text] = LESSONS[L - 1];
+  let items = parse(text);
+  if (items.length < 10) {   // 不夠 10 題 → 補這一課的單字
+    const used = items.map(x => x.w).join('');
+    items = items.concat(parse(EXTRA[L - 1]).filter(x => !used.includes(x.w)).slice(0, 10 - items.length));
+  }
+  // 照題目順序填格子：題號 → 每個音 → 句點；一題放不下這一欄就換下一欄
+  const cols = [[]];
+  items.forEach((it, i) => {
+    const cells = [`<div class="cell num">${i + 1}</div>`, ...it.zys.map(z => `<div class="cell">${syl(z)}</div>`), '<div class="cell dot">。</div>'];
+    if (cols[cols.length - 1].length + cells.length > ROWS) cols.push([]);
+    cols[cols.length - 1].push(...cells);
+  });
+  while (cols.length < Math.min(COLS, Math.max(6, cols.length))) cols.push([]);  // 只畫用到的欄（至少 6 欄）
+  const grid = cols.map(c => { while (c.length < ROWS) c.push('<div class="cell"></div>'); return `<div class="col">${c.join('')}</div>`; }).join('');
+  const head = ['ㄉㄧˋ', NUM_ZY[L - 1], 'ㄎㄜˋ'].map(syl).join('');
+  return `<section class="page" title="第${L}課 ${title}"><div class="wrap"><div class="title">${head}</div><div class="grid">${grid}</div></div></section>`;
+}
+
+const out = document.getElementById('out'), sel = document.getElementById('pick');
+sel.innerHTML = '<option value="0">全部 9 課</option>' + LESSONS.map((l, i) => `<option value="${i + 1}">第 ${i + 1} 課：${l[0]}</option>`).join('');
+sel.onchange = () => { const L = +sel.value; out.innerHTML = (L ? [L] : LESSONS.map((_, i) => i + 1)).map(page).join(''); };
+sel.onchange();
+</script>
+</body>
+</html>
